@@ -17,7 +17,9 @@ artemis-helios/
 ├── Code/
 │   ├── gen_figures_hires.py    # Generate 300 DPI IEEE figures
 │   ├── graphical_abstract.py  # Create graphical abstract
-│   └── CLEAN_AND_BUILD_v3.m   # MATLAB simulation code
+│   ├── Simulink_Documentation # Documentation for Simulink
+│   ├── gen_figures_py_ Documentation  # Documentation for python code
+│   └── Simulink_Simulation.m   # MATLAB simulation code
 ├── Docs/
 │   ├── helios_artemis_manuscript.docx  # Research paper
 │   └── cover_letter.docx       # Submission cover letter
