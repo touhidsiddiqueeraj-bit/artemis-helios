@@ -1,0 +1,140 @@
+Helios_Artemis Documentation
+Technical Documentation — Helios-Artemis MPPT Simulator
+Hussain Touhid Siddiquee  |  Dept. EEE, Leading University Sylhet  |  Helios-Artemis Research Project
+
+1. Purpose
+CLEAN_AND_BUILD_v3.m is a MATLAB build automation script for the Helios-Artemis MPPT Simulator. It performs a complete teardown of any stale S-function source files and Simulink model, regenerates all six Level-2 S-function .m files programmatically, constructs the Simulink block diagram (HA_MPPT_v3.slx) from scratch using the Simulink API, and saves the model ready for simulation. The script is the single entry point that ensures a reproducible, clean simulation environment.
+
+2. Quick-Start Run Sequence
+Paste all four lines into the MATLAB Command Window in order:
+clear log_ghi log_ppv log_pmpp log_eta log_soc log_vbat log_tj
+clear mex
+CLEAN_AND_BUILD_v3
+sim('HA_MPPT_v3')
+
+NOTE  Do NOT use 'clear all' inside or before the script — it will kill the script mid-execution. The 'clear mex' forces recompilation of S-functions and is required after any S-function source edit.
+
+3. Script Architecture — 4 Steps
+Step	Label	Description
+1	Clean Slate	Closes HA_MPPT_v3 if loaded, deletes all 6 S-function .m files and post_v3.m from the working directory.
+2	Write S-functions	Writes all 6 S-function source files via fopen/fprintf/fclose blocks, each implementing a discrete-time S-function interface.
+3	Build Simulink Model	Creates HA_MPPT_v3 with new_system, configures solver, adds all blocks and subsystems, wires all signals, saves the .slx file.
+4	Done	Calls addpath(pwd) and rehash to ensure all S-functions are on the path. Prints run instructions.
+
+4. S-Function Reference
+All S-functions are discrete-time (Ts = 0.1 s) implemented via the legacy switch-flag interface. Each is fully regenerated on every script run.
+4.1  ha_irr_v3.m — Markov Irradiance Model
+Simulates stochastic global horizontal irradiance (GHI) for a Sylhet July day using a 3-state Markov chain combined with an Ornstein-Uhlenbeck (OU) flicker process.
+Parameter	Value / Description
+States	3 discrete: x(1)=cloud_state, x(2)=cloud_timer, x(3)=G_fast
+Outputs	1: GHI (W m⁻²)
+Markov states	0=overcast (cf=0.15), 1=partly cloudy (cf=0.55), 2=clear (cf=0.90)
+Transition interval	15 s — cloud state checked every 15 simulation seconds
+OU flicker	tau=1.0 s, sigma_frac=0.25 (25% of Gcf), clipped to ±40% of clear-sky
+Solar model	Gclear = 800 × aerosol × sin(π × fraction_of_day), aerosol = 0.93, peak ≈ 744 W m⁻²
+Sunrise / Sunset	05:30 / 18:30 local (Sylhet July)
+4.2  ha_lstm_v3.m — NARX Irradiance Predictor
+Implements a 4-unit NARX (Nonlinear AutoRegressive with eXogenous inputs) network with tanh activation to predict irradiance 30 s ahead, with a stochastic UART hold to simulate embedded MCU communication latency.
+Parameter	Value / Description
+States	26 discrete: x(1..24)=input buffer (normalised GHI), x(25)=hold_counter, x(26)=last_prediction
+Architecture	5-input NARX (4 past GHI + 1 feedback), 4 hidden tanh units, 1 linear output
+Weight matrix W1	4×5, hand-fitted coefficients
+Weight vector W2	1×5, output layer
+UART hold	Stochastic hold of 3–10 steps (300 ms – 1 s) modelled via abs(sin(t×17.3))
+Output	Predicted GHI (W m⁻²), clamped ≥ 0
+4.3  ha_pv_v3.m — PV Panel Model (IEC 61215)
+Models a 50 Wp mono-Si PV panel using an empirical power-law I-V curve with NOCT-based thermal derating and 3% soiling factor. The exponent k is analytically derived so that I(Vmp) = Imp exactly.
+Parameter	Value / Description
+States	0 (pure feedthrough, flag 3 only)
+Inputs	3: G (irradiance), Vref (operating voltage), Tj_ext (external junction temp)
+Outputs	4: Ipv, Vr, Ppv, Pm (MPP power)
+STC parameters	Voc₀=21.6 V, Vmp₀=17.8 V, Isc₀=3.0×0.97 A (3% soiling), Imp₀=2.81 A
+Curve exponent	k=14.2606 (fitted so I(Vmp)=Imp exactly via dP/dV=0 analytical solution)
+Thermal coefficients	βVoc=−3.4×10⁻³/°C, βVmp=−4.1×10⁻³/°C, αIsc=+0.5×10⁻³/°C
+Thermal model	Tc = Tamb + (NOCT−20)/800×G + kJ×max(0, Tj_ext−40), NOCT=45°C, Tamb=35°C, kJ=0.04
+MPP voltage	Vmp_c = Voc_T × (1/(1+k))^(1/k)  — closed-form from dP/dV=0
+4.4  ha_buck_v3.m — Dynamic Buck Converter
+Models an IRFB4110-based synchronous buck converter with a full loss model including conduction loss, switching loss (capacitive + gate charge + turn-on transition), and inductor DCR copper loss. Operating duty cycle is computed dynamically each time step.
+Parameter	Value / Description
+States	0 (pure feedthrough, flag 3 only)
+Inputs	2: Vr (PV-side reference voltage), Vb (battery voltage)
+Outputs	3: Io (output current), eta_b (efficiency), Tj (junction temperature)
+MOSFET params	Rds=3.7 mΩ, Coss=83 nF, Qg=10 nC, Vgs=10 V, tr=20 ns, fsw=50 kHz
+Inductor	L_DCR=50 mΩ copper loss resistance
+Diode	Vf=0.45 V forward drop
+Thermal	Rth=18.55 °C/W, Tamb=40°C → Tj=Tamb+Ploss×Rth
+Duty cycle	D=clamp(Vb/Vin, 0.01, 0.99) — dynamic per step
+4.5  ha_battery_v3.m — SLA Battery Model
+Models a 12 V/7 Ah sealed lead-acid battery using the Shepherd OCV equation, Peukert charge integration, and internal resistance voltage drop. Warm-start initial condition avoids a voltage spike at t=0.
+Parameter	Value / Description
+States	2 discrete: x(1)=Q_Ah (charge), x(2)=Vt_prev (terminal voltage)
+Inputs	1: Ic (charge current)
+Outputs	2: Vt (terminal voltage), SoC (state of charge 0–1)
+OCV model	Voc = 11.84 + 1.98×SoC − 0.28×SoC² (Shepherd equation)
+Peukert	np=1.25, Irate=1.0 A — effective charge dQ=(Ic/Irate)^(np−1)×Ic×dt/3600
+Internal resistance	Rint=0.05 Ω → Vt=Voc+Rint×Ic
+Initial SoC	SoC₀=0.30 (30% at midnight); Vt₀ pre-computed at Ic=0 to avoid spike
+4.6  ha_artemis_v3.m — VS-P&O MPPT Controller
+Implements the Artemis variable-step perturb-and-observe (VS-P&O) MPPT algorithm enhanced with an LSTM-blend correction step and ADC noise modelling. The controller dynamically scales the perturbation step based on |dP/dV| and applies a LSTM-driven voltage correction when the irradiance prediction diverges significantly from the measured value.
+Parameter	Value / Description
+States	4 discrete: x(1)=Vref, x(2)=Pprev, x(3)=Vprev, x(4)=cooldown_counter
+Inputs	6: Ip, Vp, Gp (predicted), Gn (measured), Vb, Pm
+Outputs	3: Vref, eta (MPPT efficiency), cs (charge state)
+P&O step law	dl = clamp(0.008×|dP/dV|, 0.05 V, 0.60 V) — variable step
+ADC noise	σ_I=2 mA, σ_V=10 mV — added to current and voltage measurements
+LSTM blend threshold	rel_dev = |Gp−Gn|/max(Gp,Gn) > 0.15 triggers blend
+Blend weight α	0.45×exp(−1.5×rel_dev) for Gp>Gn; 0.08×exp(−1.0×rel_dev) for Gn>Gp
+Cooldown	20 steps (2 s) after each blend event to prevent oscillation
+Vref clamp	0.60×Voc_nom to 0.98×Voc_nom (12.96 V to 21.17 V)
+Charge states	cs=1: bulk (Vt<14.70V), cs=2: absorption (14.70–14.76V), cs=3: float (>14.76V)
+
+5. Simulink Model — HA_MPPT_v3
+5.1  Solver Configuration
+Parameter	Value
+Solver type	FixedStepDiscrete
+Fixed step size	0.1 s
+Simulation duration	86400 s (1 full day)
+Signal logging	Off (manual To Workspace blocks used)
+5.2  Block Topology
+The model wires five subsystems together at the top level. Two Unit Delay blocks break algebraic loops:
+Block	Subsystem Contents	Algebraic Loop Fix
+Irr	ha_irr_v3 S-function	—
+LSTM	ha_lstm_v3 S-function	—
+PVPanel	Mux → ha_pv_v3 → Demux (3→4)	VrefDly: IC=17.8V, Ts=0.1
+ArtemisMPPT	Mux → ha_artemis_v3 → Demux (6→3)	—
+BuckConv	Mux → ha_buck_v3 → Demux (2→3)	TjDly: IC=40°C, Ts=0.1
+Battery	ha_battery_v3 → Demux (1→2)	—
+5.3  Signal Routing
+Key top-level signal connections:
+    • Irr/1 → PVPanel/1 (G), LSTM/1 (G), ArtemisMPPT/4 (Gn), log_ghi
+    • VrefDly/1 → PVPanel/2 (Vref); ArtemisMPPT/1 → VrefDly/1 and BuckConv/1
+    • TjDly/1 → PVPanel/3 (Tj_ext); BuckConv/3 (Tj) → TjDly/1
+    • PVPanel/1 → ArtemisMPPT/1 (Ip); PVPanel/2 → ArtemisMPPT/2 (Vp)
+    • LSTM/1 → ArtemisMPPT/3 (Gp predicted); PVPanel/4 → ArtemisMPPT/6 (Pm)
+    • Battery/1 (Vt) → ArtemisMPPT/5 (Vb) and BuckConv/2 (Vb)
+    • BuckConv/1 (Io) → Battery/1; BuckConv/2 (eta) → TrmBeta (terminated)
+    • ArtemisMPPT/3 (cs) → TrmSt (terminated)
+5.4  Workspace Loggers
+Variable	Signal Source	Description
+log_ghi	Irr/1	Global horizontal irradiance (W m⁻²)
+log_ppv	PVPanel/3	PV output power (W)
+log_pmpp	PVPanel/4	True MPP power (W)
+log_eta	ArtemisMPPT/2	Instantaneous MPPT efficiency (0–1)
+log_soc	Battery/2	Battery state of charge (0–1)
+log_vbat	Battery/1	Battery terminal voltage (V)
+log_tj	BuckConv/3	MOSFET junction temperature (°C)
+
+6. Physics Implementation Notes
+Tag	Name	Description
+[F1]	LSTM lag	Stochastic UART hold (3–10 steps) delays irradiance prediction; models real STM32↔ESP32 UART latency at 100 ms polling interval.
+[F2]	NOCT thermal	Cell temperature uses NOCT correction plus a thermal cross-coupling term from MOSFET Tj when converter runs hot (kJ=0.04).
+[F3]	Shepherd battery	OCV polynomial fit to SLA discharge curves; Peukert exponent np=1.25 models rate-dependent capacity loss.
+[F4]	Dynamic buck	Duty cycle D=Vb/Vin computed every 0.1 s; not fixed. Loss model separates conduction, switching, and DCR contributions.
+[F5]	0.1 s step / 30 s cloud	Simulation step matches UART polling rate; Markov cloud transitions every 15 s, within the LSTM 30-s prediction horizon.
+
+7. Dependencies
+Requirement	Details
+MATLAB	R2018b or later (simsizes API, add_block/add_line Simulink API)
+Simulink	Required for new_system, add_block, save_system, sim()
+Working directory	Must be writable — all 6 S-function .m files are created in pwd
+No Toolboxes required	No DSP, Control System, or other toolboxes needed beyond base Simulink
