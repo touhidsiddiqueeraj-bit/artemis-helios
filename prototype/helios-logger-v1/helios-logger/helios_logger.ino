@@ -619,8 +619,8 @@ void configureBH1750() {
 
 /**
  * Read lux from BH1750.
- * Returns true on valid reading, false if sensor returns error value (65535).
- * BH1750 saturates cleanly — no gain management needed.
+ * Returns true on valid reading, false on I²C communication error (returns -1).
+ * BH1750 saturates cleanly at 54612 lux — no gain management needed.
  */
 bool readBH1750(float &lux) {
   float reading = lightMeter.readLightLevel();
@@ -837,6 +837,7 @@ void setup() {
   // GY-302 (BH1750)
   Wire.begin(I2C_SDA, I2C_SCL);
   configureBH1750();
+  delay(180);  // wait for first measurement in HIGH_RES mode (~120 ms typ)
   // Verify sensor is responding
   float testLux = lightMeter.readLightLevel();
   if (testLux < 0) {

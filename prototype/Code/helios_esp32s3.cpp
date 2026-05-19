@@ -67,8 +67,9 @@
 #define GY302_CMD_POWER_ON    0x01
 #define GY302_CMD_POWER_OFF   0x00
 #define GY302_CMD_RESET       0x07
-#define GY302_CMD_CONT_1LX    0x10  /* Continuous, 1 lx resolution, 120 ms */
-/* Using 1 lx continuous mode for best accuracy                                  */
+#define GY302_CMD_CONT_4LX    0x11  /* Continuous, 4 lx resolution, 16 ms */
+/* 4lx mode (16 ms) fits comfortably in the 100 ms inference loop; 1lx mode     */
+/* (0x10, 120 ms) would cause every other read to return stale data.            */
 
 /* ─── Lux → irradiance conversion (calibrated from paper §III-D)
  *   G (W/m²) ≈ lux × 0.0079  (approximation for CIE AM1.5 spectrum)        */
@@ -349,10 +350,12 @@ static bool gy302_init(void)
     if (Wire.endTransmission() != 0) return false;
     delay(10);
 
-    /* Start continuous measurement, 1 lx resolution */
+    /* Start continuous measurement, 4 lx resolution (16 ms cycle) */
     Wire.beginTransmission(GY302_ADDR);
-    Wire.write(GY302_CMD_CONT_1LX);
-    return Wire.endTransmission() == 0;
+    Wire.write(GY302_CMD_CONT_4LX);
+    if (Wire.endTransmission() != 0) return false;
+    delay(20);  /* wait for first measurement to complete (16 ms typ) */
+    return true;
 }
 
 /**
@@ -368,7 +371,7 @@ static uint16_t gy302_read_raw(void)
 
 /**
  * Read irradiance in W/m² from GY302.
- * Lux = raw / 1.2 in 1 lx continuous mode, then × 0.0079 to W/m².
+ * Lux = raw / 1.2 in continuous mode, then × 0.0079 to W/m².
  */
 static float gy302_read_irradiance_wm2(void)
 {
