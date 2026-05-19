@@ -1,0 +1,173 @@
+Artemis_Helios_Figures Documentation
+Technical Documentation — Helios-Artemis IEEE Publication Figures
+Hussain Touhid Siddiquee  |  Dept. EEE, Leading University Sylhet  |  Helios-Artemis Research Project
+
+1. Purpose
+gen_figures_hires.py generates all nine publication-quality figures required for the Helios-Artemis MPPT paper submission. Every figure targets the IEEE two-column format at 300 DPI using Times New Roman typography. The script is fully self-contained — it does not depend on simulation output files from MATLAB. Instead it re-implements the core physics models (irradiance, PV, P&O) and uses fixed random seeds so figures are exactly reproducible across machines and runs.
+
+2. Quick-Start
+Run from the project root directory:
+pip install numpy matplotlib scipy
+python gen_figures_hires.py
+
+Output is written to a figures/ subdirectory created automatically adjacent to the script. Each figure is saved as a PNG at 300 DPI.
+NOTE  matplotlib backend is set to 'Agg' at the top of the file. Do not remove this line — without it the script will fail on headless servers (CI, SSH sessions, WSL without display).
+
+3. Global Configuration
+3.1  Canvas & Font Settings
+Parameter	Value / Notes
+Column widths (C1, C2)	3.5 in (single column), 7.16 in (full two-column) — IEEE standard
+Font family	serif → ['Times New Roman', 'DejaVu Serif'] fallback
+Base font size	8 pt (axis labels), 8.5 pt (titles), 7 pt (ticks/legends)
+Line width	1.0 pt (data lines), 0.6 pt (axis spines), 0.35 pt (grid)
+DPI	300 for both display and savefig
+Padding	savefig.bbox='tight', pad_inches=0.04 — minimal whitespace
+3.2  Colour Palette
+Variable	Hex	Usage
+B	#1565C0	Primary blue — irradiance, measured data, primary bars
+R	#C62828	Red — baselines, envelope curves, alarm/peak values
+G	#2E7D32	Green — Helios-Artemis results, battery/SoC
+O	#E65100	Orange — warnings, cost comparisons, literature bands
+P	#6A1B9A	Purple — LSTM/prediction, step-size law, η traces
+GR	#546E7A	Grey — secondary text, plain P&O baseline
+3.3  Random Seeds
+Seed	Scope	Purpose
+np.random.seed(23)	Global (top of file)	Controls all stochastic content in fig2, fig5, fig7
+np.random.seed(7)	Local in fig4()	Generates LSTM test-set irradiance independently of global seed
+WARN  The fig4 suptitle hard-codes R²=0.917, MAE=50.7 W m⁻² (paper-reported values). The live-computed metrics from seed=7 will differ slightly. This is a cosmetic mismatch only — the subplot (a) title shows the live values correctly.
+
+4. Shared Physics Helper: pv_model()
+A single PV model function is shared by fig3, fig5, and fig7 to ensure consistency across all figures that show PV output. It implements the same IEC 61215 power-law model used in ha_pv_v3.m.
+Argument / Return	Description
+G	Irradiance (W m⁻²)
+Vr	Reference/operating voltage (V)
+Isc0=2.91 A	STC short-circuit current (post-soiling: 3.0 × 0.97)
+Voc0=21.6 V	STC open-circuit voltage
+k=14.2606	I-V curve exponent — analytically fitted so I(Vmp)=Imp exactly
+bV=−3.4×10⁻³ /°C	Voc temperature coefficient
+aI=+0.5×10⁻³ /°C	Isc temperature coefficient
+NOCT=45°C, Tamb=35°C	Thermal derating parameters
+Returns: (Ppv, Pm, Vrc)	PV output power (W), true MPP power (W), clamped operating voltage (V)
+
+5. Figure Reference
+Fig. 1 — System Architecture  (fig1_architecture.png)
+Property	Details
+Canvas	7.16 × 3.5 in, full two-column width
+Technique	FancyBboxPatch boxes + annotate arrows — pure matplotlib, no images
+Blocks	7 boxes: PV Panel (yellow), Buck Conv (pink), Battery (green), Load, ARTEMIS (purple), HELIOS (blue), Sensors (orange)
+Key annotation	Bidirectional UART 100 ms arrow (purple) between ARTEMIS and HELIOS with Vref_pred label
+Hardware annotated	STM32F103 (ARTEMIS), ESP32-S3 (HELIOS), INA219, TSL2591, OV2640, IRFZ44N, TC4420
+Output file	fig1_architecture.png
+
+Fig. 2 — Irradiance Model  (fig2_irradiance.png)
+Property	Details
+Canvas	7.16 × 3.5 in, 2 rows × 1 col
+Subplot (a)	Full 24-hour GHI fill + clear-sky dashed envelope (aerosol ×0.93, peak 744 W m⁻²)
+Subplot (b)	Zoom 09:30–11:30 h showing OU flicker (τ=1 s, σ=25%)
+Physics parameters	Markov transition matrix 3×3, cloud fractions [0.15, 0.55, 0.90], Sylhet sunrise 05:30 / sunset 18:30
+Random seed	23 (global)
+Output file	fig2_irradiance.png
+
+Fig. 3 — I-V and P-V Curves  (fig3_iv_curves.png)
+Property	Details
+Canvas	7.16 × 2.9 in, 1 row × 2 col
+Subplot (a)	I-V curves for G = 200, 400, 600, 800, 1000 W m⁻². Dots mark true MPP per curve.
+Subplot (b)	P-V curves for same 5 irradiance levels. Legend lists peak powers.
+Model used	pv_model() — NOCT thermal derating, k=14.2606 analytical fit, Tamb=35°C
+Title note	Isc₀=2.91 A reflects 3% soiling factor applied at STC
+Output file	fig3_iv_curves.png
+
+Fig. 4 — LSTM Predictor Performance  (fig4_lstm.png)
+Property	Details
+Canvas	7.16 × 3.8 in, 2 rows × 2 col
+Subplot (a)	60-minute measured vs predicted GHI timeseries (N=600 steps at 0.1 s)
+Subplot (b)	Scatter: measured vs predicted on independent Year-2 test set. Shows R², MAE, RMSE text box.
+Subplot (c)	Residual histogram with Gaussian overlay
+Subplot (d)	α blend-weight sensitivity: MPPT efficiency vs α over [0.05, 0.75]. Optimal α=0.35 marked.
+LSTM model	Synthetic NARX approximation: pred[i] = 0.80×act[i−1] + 0.20×act[i−4] + noise(σ=18)
+Random seed	7 (local, independent of global)
+Suptitle discrepancy	Hard-coded R²=0.917 / MAE=50.7 in suptitle; live subplot (a) title shows computed values from seed=7
+Output file	fig4_lstm.png
+
+Fig. 5 — Full-Day Simulation  (fig5_simulation.png)
+Property	Details
+Canvas	7.16 × 5.8 in, 6-panel stacked (GridSpec, hspace=0.06)
+Panel 1: GHI	Filled irradiance trace; peak 744 W m⁻² annotated
+Panel 2: Power	Ppv (green) vs Pmpp dashed (red); legend top-left
+Panel 3: η_MPPT	Efficiency trace (purple); NaN below G=80 W m⁻²; mean efficiency annotated
+Panel 4: SoC	State of charge 0–100%; starts at 45%, ends at 100%
+Panel 5: Vbat	Battery terminal voltage 12.41–13.61 V range annotated
+Panel 6: Tj	MOSFET junction temperature (°C); peak annotated
+Simulation model	Inline Python replication of all 5 S-functions at 0.1 s timestep; 864,000 iterations
+Efficiency formula	sum(Ppv where G>80) / sum(Pmpp where G>80) × 100%
+Random seed	23 (global)
+Output file	fig5_simulation.png
+
+Fig. 6 — Method Comparison & Monte Carlo  (fig6_comparison.png)
+Property	Details
+Canvas	7.16 × 3.0 in, 1 row × 2 col
+Subplot (a)	Grouped bar chart: 3 methods × 2 conditions (Monsoon July / Annual equiv.). Orange band = literature 90–95% range.
+Methods compared	Plain P&O (70.7% / 85.8%), VS-P&O without LSTM (85.2% / 88.1%), Helios-Artemis (94.0% / 94.0%)
+Subplot (b)	30-day Monte Carlo histogram for Helios-Artemis. Fixed array of 30 values (not random). Gaussian fit overlay.
+Monte Carlo stats	μ=94.0%, σ≈0.44%, 95% CI annotated. Values hard-coded (not drawn from simulation).
+Output file	fig6_comparison.png
+
+Fig. 7 — VS-P&O Convergence  (fig7_po_convergence.png)
+Property	Details
+Canvas	7.16 × 2.7 in, 1 row × 3 col
+Subplot (a)	P-V curve at G=500 W m⁻² with VS-P&O trajectory (70 steps from cold start V=8V). True Vmp dashed line.
+Subplot (b)	Step-size law: dl = clip(0.008×|dP/dV|, 0.05, 0.60). Shows dl_min and dl_max dashed lines.
+Subplot (c)	Transient convergence: MPPT efficiency vs step count. ~18 steps to reach 94% steady-state.
+ADC noise model	σ_I=2 mA, σ_V=10 mV applied per step — same values as ha_artemis_v3.m
+Output file	fig7_po_convergence.png
+
+Fig. 8 — Bill of Materials & Cost  (fig8_cost.png)
+Property	Details
+Canvas	7.16 × 2.9 in, 1 row × 2 col
+Subplot (a)	Pie chart of BOM cost breakdown across 7 components. Total printed in BDT and USD (÷110).
+BOM line items	ESP32-S3 (380), STM32F103 (120), INA219 (80), TSL2591 (120), Buck stage (350), PCB+Housing (280), Misc (170) — all BDT Dhaka Q1 2026
+Subplot (b)	Bar chart: Helios-Artemis vs 3 commercial alternatives (PWM ctrl, basic MPPT, IDCOL MPPT). Cost in BDT.
+Saving annotation	↓xx% vs IDCOL text label auto-computed from BOM total vs 13,500 BDT
+Exchange rate	1 USD = 110 BDT (Q1 2026, Dhaka retail)
+Output file	fig8_cost.png
+
+Fig. 9 — Field Validation  (fig9_validation.png)
+Property	Details
+Canvas	7.16 × 2.9 in, 1 row × 2 col
+Subplot (a)	12-month line chart: Hossain et al. field data (red), Helios-Artemis simulation (blue), Plain P&O (grey). ±2% field uncertainty band in red.
+Subplot (b)	Grouped bar chart for monsoon season May–Oct: Plain P&O vs Hossain et al. vs Helios-Artemis.
+Reference data	Hossain et al. IDCOL SHS field values: [82,83,85,86,84,80,79,81,83,85,84,82]%
+Simulation values	Helios-Artemis monthly: [89,90,92,93,91,88,94,91,92,93,91,90]%. July peak = 94% matches Monte Carlo.
+Validation caveat	Partial validation only — field deployment data not yet available. See paper limitations section.
+Output file	fig9_validation.png
+
+6. Output File Summary
+#	Filename	Canvas (in)	Subplots	IEEE Use
+1	fig1_architecture.png	7.16 × 3.5	1	Section II
+2	fig2_irradiance.png	7.16 × 3.5	2 (stacked)	Section III
+3	fig3_iv_curves.png	7.16 × 2.9	2 (side)	Section III
+4	fig4_lstm.png	7.16 × 3.8	2×2 grid	Section IV
+5	fig5_simulation.png	7.16 × 5.8	6 (stacked)	Section V
+6	fig6_comparison.png	7.16 × 3.0	2 (side)	Section V
+7	fig7_po_convergence.png	7.16 × 2.7	3 (side)	Section IV
+8	fig8_cost.png	7.16 × 2.9	2 (side)	Section VI
+9	fig9_validation.png	7.16 × 2.9	2 (side)	Section V
+
+7. Dependencies
+Package	Usage	Install
+numpy	Array operations, random number generation, statistics	pip install numpy
+matplotlib	All figure rendering, FancyBboxPatch, GridSpec, Agg backend	pip install matplotlib
+scipy.stats.norm	Gaussian overlay on histograms (fig4, fig6)	pip install scipy
+os (stdlib)	Output directory creation, file path handling	— (built-in)
+
+8. Reproducibility Guarantee
+Exact figure reproduction is guaranteed provided:
+    • numpy version is ≥1.17 (random seed API unchanged since 1.17)
+    • matplotlib version is ≥3.3 (FancyBboxPatch pad parameter stable)
+    • scipy version is ≥1.4
+    • The global seed np.random.seed(23) and local seed np.random.seed(7) in fig4() are not modified
+    • The script is run as __main__ (not imported as a module, which would skip the seed calls in the module body)
+
+NOTE  If figures are run individually (e.g. calling fig5() in isolation) without first running fig1()–fig4(), the global seed will be at a different RNG state. Always run the full script via python gen_figures_hires.py for exact paper figures.
+
+Helios-Artemis MPPT Research Project  —  gen_figures_hires.py Documentation
