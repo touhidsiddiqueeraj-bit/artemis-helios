@@ -15,18 +15,45 @@ This project presents a comprehensive study on solar PV system optimization thro
 ```
 artemis-helios/
 ├── Code/
-│   ├── gen_figures_hires.py    # Generate 300 DPI IEEE figures
-│   ├── graphical_abstract.py  # Create graphical abstract
-│   ├── Simulink_Documentation # Documentation for Simulink
-│   ├── gen_figures_py_ Documentation  # Documentation for python code
-│   └── Simulink_Simulation.m   # MATLAB simulation code
+│   ├── MatLab/                     # MATLAB simulation & analysis scripts
+│   │   ├── Artemis_Helios_Simulation.m
+│   │   ├── HA_MPPT_v3.slx          # Simulink model
+│   │   ├── Simulink_Simulation.m
+│   │   ├── ha_artemis_v3.m         # Main Artemis controller
+│   │   ├── ha_battery_v3.m         # Battery model
+│   │   ├── ha_buck_v3.m            # Buck converter
+│   │   ├── ha_irr_v3.m             # Irradiance processing
+│   │   ├── ha_lstm_v3.m            # LSTM prediction
+│   │   ├── ha_pv_v3.m              # PV panel model
+│   │   ├── dailysummary.fig
+│   │   └── energysummary.fig
+│   ├── Python/                     # Python scripts
+│   │   ├── 01_irradiance_generator.py
+│   │   ├── 02_lstm_training.py
+│   │   ├── 03_mppt_controllers.py
+│   │   ├── gen_figures_hires.py
+│   │   └── graphical_abstract.py
+│   ├── documentation/              # Project documentation
+│   ├── figures/                    # High-resolution IEEE figures
+│   └── __pycache__/
 ├── Docs/
-│   ├── helios_artemis_manuscript.docx  # Research paper
-│   └── cover_letter.docx       # Submission cover letter
-├── FIG1-FIG9/                  # Individual figure scripts
-├── figures_python/             # Generated Python figures
-├── figures_simulink/           # Simulink-based figures
-└── GRAPHICAL_ABSTRACT/         # Graphical abstract generation
+│   ├── Presentation/               # PowerPoint presentations
+│   ├── Study_materials/            # Study guides & primers
+│   └── Upload_package/             # MDPI submission package
+├── Figures/
+│   ├── figures_python/             # Python-generated figures (FIG1-FIG9)
+│   │   ├── FIG1/ ... FIG9/         # Individual figure scripts & outputs
+│   ├── GRAPHICAL_ABSTRACT/         # Graphical abstract generation
+│   └── MATLAB Figures/             # MATLAB exported figures
+├── Tables/                         # CSV data tables
+│   ├── helios_artemis_irradiance_representative_days.csv
+│   ├── helios_artemis_year1_training_daily_summary.csv
+│   └── helios_artemis_year2_test_daily_summary.csv
+├── prototype/
+│   ├── Code/                       # Firmware (STM32 & ESP32-S3)
+│   ├── Guide/                      # Schematics, PCB, layout guide
+│   └── schematics/                 # KiCad design files
+└── README.md
 ```
 
 ## Figures
