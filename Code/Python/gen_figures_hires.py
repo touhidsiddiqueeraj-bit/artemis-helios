@@ -59,7 +59,7 @@ def fig1():
     box(5.25,4.2,1.2,1.1,'Load','DC Output',fc='#F1F8E9',ec='#558B2F')
     box(1.75,0.4,1.7,2.8,'ARTEMIS','STM32F103\nVS-P&O MPPT\nCC/CV\nINA219',fc='#EDE7F6',ec='#4527A0')
     box(5.1,0.4,2.4,4.9,'HELIOS','ESP32-S3\nDual LSTM\n(irradiance + gain)\nTF.js Retrain\nSD Logging\nWeb Dashboard\nZero Cloud Dep.',fc='#E3F2FD',ec=B)
-    box(0.1,0.4,1.3,2.8,'Sensors','TSL2591\nOV2640\nINA219\nSD Card',fc='#FFF3E0',ec=O)
+    box(0.1,0.4,1.3,2.8,'Sensors','GY302\nOV2640\nINA219\nSD Card',fc='#FFF3E0',ec=O)
 
     arr(1.5,4.75,1.85,4.75,'Vin,Iin')
     arr(3.35,4.75,3.65,4.75,'Vbat,Ibat')
@@ -315,7 +315,7 @@ def fig7():
 def fig8():
     fig,(a1,a2)=plt.subplots(1,2,figsize=(C2,2.9))
     comps={'ESP32-S3\nModule':380,'STM32F103\nBlue Pill':120,'INA219':80,
-           'TSL2591':120,'Buck Stage\n(passives)':350,'PCB+Housing':280,'Misc':170}
+           'GY302':120,'Buck Stage\n(passives)':350,'PCB+Housing':280,'Misc':170}
     cols_=[B,'#5C6BC0',G,O,R,'#795548','#607D8B']
     vs=list(comps.values()); tot=sum(vs)
     w,_,atx=a1.pie(vs,labels=None,autopct='%1.0f%%',colors=cols_,startangle=90,

@@ -1089,7 +1089,7 @@
     (effects (font (size 1.2 1.2)) (justify left))
     (uuid "b1000030-0000-0000-0000-000000000003")
   )
-  (text "I2C: SDA/SCL labels shared by INA219(addr 0x40) TSL2591(addr 0x29) ESP32 GPIO21/22 STM32 PB6/PB7 -- R2 R3 4k7 pull to +3.3V"
+  (text "I2C: SDA/SCL labels shared by INA219(addr 0x40) GY302(addr 0x23) ESP32 GPIO21/22 STM32 PB6/PB7 -- R2 R3 4k7 pull to +3.3V"
     (at 10 21 0)
     (effects (font (size 1.2 1.2)) (justify left))
     (uuid "b1000030-0000-0000-0000-000000000004")
@@ -1119,7 +1119,7 @@
     (effects (font (size 1.2 1.2)) (justify left))
     (uuid "b1000030-0000-0000-0000-000000000009")
   )
-  (text "ICs needing footprints from KiCad libs:\nU1 ESP32-S3 DevKit-C -- RF_Module:ESP32-S3-WROOM-1\nU2 STM32F103C8T6 -- MCU_ST_STM32F1:STM32F103C8Tx  LQFP-48\nU3 INA219 -- Sensor_Current:INA219xBx  SOIC-8\nU4 TC4420 -- Driver_FET:TC4420  SO-8\nU5 AMS1117-3.3 -- Regulator_Linear:AMS1117-3.3  SOT-223\nU6 TSL2591 -- Sensor_Optical:TSL2591  DFN-6\nQ1 IRFB4110 -- Transistor_FET:IRLB8721PbF  TO-220 sub\nD1 SS34 -- Device:D_Schottky  D_SMA"
+  (text "ICs needing footprints from KiCad libs:\nU1 ESP32-S3 DevKit-C -- RF_Module:ESP32-S3-WROOM-1\nU2 STM32F103C8T6 -- MCU_ST_STM32F1:STM32F103C8Tx  LQFP-48\nU3 INA219 -- Sensor_Current:INA219xBx  SOIC-8\nU4 TC4420 -- Driver_FET:TC4420  SO-8\nU5 AMS1117-3.3 -- Regulator_Linear:AMS1117-3.3  SOT-223\nU6 GY302 -- Sensor_Optical:BH1750  DFN-6\nQ1 IRFB4110 -- Transistor_FET:IRLB8721PbF  TO-220 sub\nD1 SS34 -- Device:D_Schottky  D_SMA"
     (at 10 100 0)
     (effects (font (size 1.2 1.2)) (justify left))
     (uuid "b1000030-0000-0000-0000-000000000010")

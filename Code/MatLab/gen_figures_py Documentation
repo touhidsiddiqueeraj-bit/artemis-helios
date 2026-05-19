@@ -56,7 +56,7 @@ Canvas	7.16 × 3.5 in, full two-column width
 Technique	FancyBboxPatch boxes + annotate arrows — pure matplotlib, no images
 Blocks	7 boxes: PV Panel (yellow), Buck Conv (pink), Battery (green), Load, ARTEMIS (purple), HELIOS (blue), Sensors (orange)
 Key annotation	Bidirectional UART 100 ms arrow (purple) between ARTEMIS and HELIOS with Vref_pred label
-Hardware annotated	STM32F103 (ARTEMIS), ESP32-S3 (HELIOS), INA219, TSL2591, OV2640, IRFZ44N, TC4420
+Hardware annotated	STM32F103 (ARTEMIS), ESP32-S3 (HELIOS), INA219, GY302, OV2640, IRFZ44N, TC4420
 Output file	fig1_architecture.png
 
 Fig. 2 — Irradiance Model  (fig2_irradiance.png)
@@ -125,7 +125,7 @@ Fig. 8 — Bill of Materials & Cost  (fig8_cost.png)
 Property	Details
 Canvas	7.16 × 2.9 in, 1 row × 2 col
 Subplot (a)	Pie chart of BOM cost breakdown across 7 components. Total printed in BDT and USD (÷110).
-BOM line items	ESP32-S3 (380), STM32F103 (120), INA219 (80), TSL2591 (120), Buck stage (350), PCB+Housing (280), Misc (170) — all BDT Dhaka Q1 2026
+BOM line items	ESP32-S3 (380), STM32F103 (120), INA219 (80), GY302 (120), Buck stage (350), PCB+Housing (280), Misc (170) — all BDT Dhaka Q1 2026
 Subplot (b)	Bar chart: Helios-Artemis vs 3 commercial alternatives (PWM ctrl, basic MPPT, IDCOL MPPT). Cost in BDT.
 Saving annotation	↓xx% vs IDCOL text label auto-computed from BOM total vs 13,500 BDT
 Exchange rate	1 USD = 110 BDT (Q1 2026, Dhaka retail)

@@ -6,7 +6,7 @@
  *
  * Responsibilities:
  *   - LSTM inference: 32-unit irradiance forecaster + 4-unit gain scheduler
- *   - Irradiance acquisition: TSL2591 (I²C, 0x29) + OV2640 green-channel
+ *   - Irradiance acquisition: GY302 (I²C, 0x23) + OV2640 green-channel
  *   - UART TX to Artemis: predicted V_MPP, irradiance, blend weight α
  *   - UART RX from Artemis: V_bat, I_bat, duty, charge state, G_est
  *   - SD card data logging (SPI): timestamp, G, V_bat, I_bat, η_mppt
@@ -17,7 +17,7 @@
  * Hardware:
  *   MCU      : ESP32-S3 DevKit-C, 240 MHz, 512 kB SRAM
  *   I²C      : GPIO 21 (SDA) / GPIO 22 (SCL)
- *     - TSL2591  @ 0x29 (irradiance)
+ *     - GY302    @ 0x23 (irradiance)
  *     - INA219   @ 0x40 (shared bus, read by Artemis; Helios monitors)
  *   UART2    : GPIO 17 (TX) / GPIO 18 (RX), 115200 — Artemis link
  *   SPI      : GPIO 23 (MOSI) / 19 (MISO) / 18 (SCK) / 5 (CS) — SD card
@@ -62,19 +62,13 @@
 #define PIN_SD_MISO     19
 #define PIN_SD_SCK      18      /* shared with UART RX — use HSPI on GPIO 14  */
 
-/* ─── TSL2591 register map ───────────────────────────────────────────────── */
-#define TSL2591_ADDR          0x29
-#define TSL2591_CMD_NORMAL    0xA0
-#define TSL2591_REG_ENABLE    0x00
-#define TSL2591_REG_CONFIG    0x01
-#define TSL2591_REG_C0DATAL   0x14
-#define TSL2591_REG_C0DATAH   0x15
-#define TSL2591_REG_C1DATAL   0x16
-#define TSL2591_REG_C1DATAH   0x17
-#define TSL2591_ENABLE_PON    0x01
-#define TSL2591_ENABLE_AEN    0x02
-/* ATIME = 100 ms, AGAIN = medium (25×)                                       */
-#define TSL2591_CONFIG_VAL    0x22
+/* ─── GY302 (BH1750) command map ──────────────────────────────────────────── */
+#define GY302_ADDR            0x23
+#define GY302_CMD_POWER_ON    0x01
+#define GY302_CMD_POWER_OFF   0x00
+#define GY302_CMD_RESET       0x07
+#define GY302_CMD_CONT_1LX    0x10  /* Continuous, 1 lx resolution, 120 ms */
+/* Using 1 lx continuous mode for best accuracy                                  */
 
 /* ─── Lux → irradiance conversion (calibrated from paper §III-D)
  *   G (W/m²) ≈ lux × 0.0079  (approximation for CIE AM1.5 spectrum)        */
@@ -338,52 +332,49 @@ static bool load_weights_from_spiffs(void)
 }
 
 /* ============================================================
- * TSL2591 irradiance sensor driver
+ * GY302 (BH1750) irradiance sensor driver
  * ============================================================ */
 
-static bool tsl_init(void)
+static bool gy302_init(void)
 {
-    Wire.beginTransmission(TSL2591_ADDR);
-    Wire.write(TSL2591_CMD_NORMAL | TSL2591_REG_ENABLE);
-    Wire.write(TSL2591_ENABLE_PON | TSL2591_ENABLE_AEN);
+    /* Power on */
+    Wire.beginTransmission(GY302_ADDR);
+    Wire.write(GY302_CMD_POWER_ON);
     if (Wire.endTransmission() != 0) return false;
+    delay(10);
 
-    Wire.beginTransmission(TSL2591_ADDR);
-    Wire.write(TSL2591_CMD_NORMAL | TSL2591_REG_CONFIG);
-    Wire.write(TSL2591_CONFIG_VAL);
+    /* Reset */
+    Wire.beginTransmission(GY302_ADDR);
+    Wire.write(GY302_CMD_RESET);
+    if (Wire.endTransmission() != 0) return false;
+    delay(10);
+
+    /* Start continuous measurement, 1 lx resolution */
+    Wire.beginTransmission(GY302_ADDR);
+    Wire.write(GY302_CMD_CONT_1LX);
     return Wire.endTransmission() == 0;
 }
 
-static uint8_t tsl_read_reg(uint8_t reg)
+/**
+ * Read raw 16-bit lux value from GY302.
+ */
+static uint16_t gy302_read_raw(void)
 {
-    Wire.beginTransmission(TSL2591_ADDR);
-    Wire.write(TSL2591_CMD_NORMAL | reg);
-    Wire.endTransmission(false);
-    Wire.requestFrom((uint8_t)TSL2591_ADDR, (uint8_t)1);
-    return Wire.read();
+    Wire.requestFrom((uint8_t)GY302_ADDR, (uint8_t)2);
+    if (Wire.available() < 2) return 0;
+    uint16_t raw = ((uint16_t)Wire.read() << 8) | Wire.read();
+    return raw;
 }
 
 /**
- * Read full-spectrum and IR counts; compute lux; convert to W/m².
- * Lux formula (TSL2591 datasheet, CPL = 53.5 × AGAINfactor × ATIME_ms / 408):
- *   For ATIME=100ms, AGAIN=25×: CPL = 53.5×25×100/408 = 327.5
- *   Lux = (C0 - C1) × (1 - C1/C0) / CPL
+ * Read irradiance in W/m² from GY302.
+ * Lux = raw / 1.2 in 1 lx continuous mode, then × 0.0079 to W/m².
  */
-static float tsl_read_irradiance_wm2(void)
+static float gy302_read_irradiance_wm2(void)
 {
-    uint16_t c0 = (uint16_t)((tsl_read_reg(TSL2591_REG_C0DATAH) << 8) |
-                               tsl_read_reg(TSL2591_REG_C0DATAL));
-    uint16_t c1 = (uint16_t)((tsl_read_reg(TSL2591_REG_C1DATAH) << 8) |
-                               tsl_read_reg(TSL2591_REG_C1DATAL));
-
-    if (c0 == 0) return 0.0f;
-    if (c1 >= c0) return 0.0f;   /* Saturated or night */
-
-    const float CPL = 327.5f;
-    float ratio = (float)c1 / (float)c0;
-    float lux   = ((float)c0 - (float)c1) * (1.0f - ratio) / CPL;
-    if (lux < 0.0f) lux = 0.0f;
-
+    uint16_t raw = gy302_read_raw();
+    if (raw == 0) return 0.0f;
+    float lux = raw / 1.2f;
     return lux * LUX_TO_WM2;
 }
 
@@ -1294,9 +1285,9 @@ void setup(void)
     /* I²C */
     Wire.begin(PIN_SDA, PIN_SCL);
 
-    /* TSL2591 */
-    if (!tsl_init()) Serial.println("[HELIOS] TSL2591 init failed");
-    else             Serial.println("[HELIOS] TSL2591 OK");
+    /* GY302 */
+    if (!gy302_init()) Serial.println("[HELIOS] GY302 init failed");
+    else               Serial.println("[HELIOS] GY302 OK");
 
     /* SPIFFS */
     if (!SPIFFS.begin(true)) Serial.println("[HELIOS] SPIFFS mount failed");
@@ -1334,8 +1325,8 @@ void loop(void)
     if (now - g_last_inference >= INFERENCE_INTERVAL_MS) {
         g_last_inference = now;
 
-        /* Read TSL2591 irradiance */
-        float g_meas = tsl_read_irradiance_wm2();
+        /* Read GY302 irradiance */
+        float g_meas = gy302_read_irradiance_wm2();
 
         /* Camera cross-check (blended 10% weight for robustness) */
         float g_cam = camera_green_irradiance_estimate();
@@ -1421,7 +1412,7 @@ void loop(void)
  *     -mfix-esp32-psram-cache-issue
  *
  * I²C shared bus summary:
- *   0x29 — TSL2591 (Helios, read-only)
+ *   0x23 — GY302   (Helios, read-only)
  *   0x40 — INA219  (Artemis primary; Helios may monitor if needed)
  *
  * UART wiring:

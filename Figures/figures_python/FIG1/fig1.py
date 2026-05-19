@@ -67,7 +67,7 @@ def fig1():
 
     # ── Bottom-left: Sensors ─────────────────────────────────────────────
     box(0.2, 0.5, 1.8, 3.8, 'Sensors',
-        'TSL2591\nOV2640\nINA219\nSD Card', fc='#FFF3E0', ec=O)
+        'GY302\nOV2640\nINA219\nSD Card', fc='#FFF3E0', ec=O)
 
     # ── Bottom-mid: ARTEMIS ──────────────────────────────────────────────
     box(2.3, 0.5, 2.0, 3.8, 'ARTEMIS',

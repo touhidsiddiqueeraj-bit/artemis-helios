@@ -243,7 +243,7 @@
     (layer "Cmts.User")
     (uuid "a1000003-0000-0000-0000-000000000008")
   )
-  (gr_text "SENSOR ZONE BOARD EDGE: U6 TSL2591 unobstructed sky view U3 INA219 C5"
+  (gr_text "SENSOR ZONE BOARD EDGE: U6 GY302 unobstructed sky view U3 INA219 C5"
     (at 12 84 0)
     (layer "Cmts.User")
     (effects (font (size 1.0 1.0)) (justify left))

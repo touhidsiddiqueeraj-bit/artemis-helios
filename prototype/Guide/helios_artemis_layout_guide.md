@@ -104,7 +104,7 @@ J1 ──► F1 ──► R1 ──► [C2] ──► Q1 ──► L1 ──► 
 - Note: The I²C bus is shared — ESP32 GPIO21/22 AND STM32 PB6/PB7 both connect to SDA/SCL. Only one set of pull-ups needed (R2/R3 is it)
 
 ### 3.8 Ambient Light Sensor
-- **U6 (TSL2591):** Mount near board edge with unobstructed upward view of sky. Shield from direct IR/heat radiation from Q1 and L1. SDA/SCL connect to shared I²C bus. Address: **0x29**
+- **U6 (GY302):** Mount near board edge with unobstructed upward view of sky. Shield from direct IR/heat radiation from Q1 and L1. SDA/SCL connect to shared I²C bus. Address: **0x23**
 
 ### 3.9 SD Card Module
 - **J3:** Place near ESP32 SPI pins (GPIO23=MOSI, GPIO19=MISO, GPIO18=SCK, GPIO5=CS)
@@ -165,8 +165,8 @@ Width: 0.25mm · Same rules as SHUNT_P
 ### 4.4 I²C Bus
 ```
 Nets: SDA, SCL
-ESP32 GPIO21 → SDA bus → INA219.SDA + TSL2591.SDA
-ESP32 GPIO22 → SCL bus → INA219.SCL + TSL2591.SCL
+ESP32 GPIO21 → SDA bus → INA219.SDA + GY302.SDA
+ESP32 GPIO22 → SCL bus → INA219.SCL + GY302.SCL
 STM32 PB6 → SCL bus (reads INA219)
 STM32 PB7 → SDA bus (reads INA219)
 
@@ -349,7 +349,7 @@ Fix all errors. Warnings about NPTH mounting holes can be ignored.
 Follow the test sequence from PCB Fabrication Notes:
 
 1. Solder SMD passives first (C5–C8, R2–R4) — use reflow or hot air
-2. Solder ICs: U3 (INA219), U4 (TC4420), U5 (AMS1117), U6 (TSL2591), U2 (STM32 LQFP-48 — fine pitch, flux + drag solder)
+2. Solder ICs: U3 (INA219), U4 (TC4420), U5 (AMS1117), U6 (GY302), U2 (STM32 LQFP-48 — fine pitch, flux + drag solder)
 3. Solder TH components: R1 (shunt), L1, C1, C2, C3, C4
 4. Solder connectors: J1, J2, J3, SWD header
 5. Last: Q1 (TO-220) and D1 (SMA) — power components
@@ -367,7 +367,7 @@ Follow the test sequence from PCB Fabrication Notes:
 | Gate ringing at 50kHz | R4 must be at TC4420 OUT — not mid-trace. No vias in gate path |
 | INA219 sense error | Kelvin sense traces carry zero current. Route completely separate from PV_POS pour |
 | I²C noise pickup from PWM | Route SDA/SCL on opposite side of board from PWM_50K trace. Ground guard if needed |
-| TSL2591 thermal interference | Keep ≥20mm from Q1/L1. Mount at board edge with thermal isolation |
+| GY302 thermal interference | Keep ≥20mm from Q1/L1. Mount at board edge with thermal isolation |
 | AMS1117 instability | C3/C4 tantalum caps are mandatory. Ceramic-only will oscillate |
 | STM32 LQFP-48 tombstoning | Pre-tin pads, use plenty of flux, drag solder method or hot air gun |
 

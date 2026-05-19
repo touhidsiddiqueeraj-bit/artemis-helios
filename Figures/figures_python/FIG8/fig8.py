@@ -27,7 +27,7 @@ B,R,G,O,P,GR = '#1565C0','#C62828','#2E7D32','#E65100','#6A1B9A','#546E7A'
 def fig8():
     fig,(a1,a2)=plt.subplots(1,2,figsize=(C2,2.9))
     comps={'ESP32-S3\nModule':380,'STM32F103\nBlue Pill':120,'INA219':80,
-           'TSL2591':120,'Buck Stage\n(passives)':350,'PCB+Housing':280,'Misc':170}
+           'GY302':120,'Buck Stage\n(passives)':350,'PCB+Housing':280,'Misc':170}
     cols_=[B,'#5C6BC0',G,O,R,'#795548','#607D8B']
     vs=list(comps.values()); tot=sum(vs)
     w,_,atx=a1.pie(vs,labels=None,autopct='%1.0f%%',colors=cols_,startangle=90,

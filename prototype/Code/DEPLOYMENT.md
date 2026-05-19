@@ -31,7 +31,7 @@
 | U3 | INA219 breakout | I²C 0x40 · 0.1 Ω shunt | 80 |
 | U4 | TC4420 CPA | Gate driver · SO-8 | — |
 | U5 | AMS1117-3.3 | 3.3 V LDO · SOT-223 | 30 |
-| U6 | TSL2591 | Irradiance sensor · I²C 0x29 | 120 |
+| U6 | GY302 | Irradiance sensor · I²C 0x23 | 120 |
 | Q1 | IRFB4110 TO-220 | N-ch MOSFET · 100 V · 3.7 mΩ | — |
 | D1 | SS34 | Schottky freewheeling · 3 A | — |
 | L1 | 100 µH power inductor | I_sat ≥ 8 A · DCR < 50 mΩ | — |
@@ -58,7 +58,7 @@ Work through these in order before applying any power.
 ### I²C bus
 - [ ] R2/R3 pull-ups (4.7 kΩ) near ESP32-S3 GPIO 21/22
 - [ ] INA219 address solder jumpers set to 0x40
-- [ ] TSL2591 mounted near board edge, unobstructed sky view, shielded from Q1/L1 heat
+- [ ] GY302 mounted near board edge, unobstructed sky view, shielded from Q1/L1 heat
 
 ### Power supply rails
 - [ ] AMS1117-3.3 input capacitor C3 (10 µF tantalum) placed within 2 mm of IN pin
@@ -246,7 +246,7 @@ Open **PlatformIO Serial Monitor** at 115200. Expected boot output:
 
 ```
 [HELIOS] Booting Helios-Artemis
-[HELIOS] TSL2591 OK
+[HELIOS] GY302 OK
 [HELIOS] OV2640 OK
 [HELIOS] LSTM weights loaded from SPIFFS
 [HELIOS] SD card OK
@@ -254,7 +254,7 @@ Open **PlatformIO Serial Monitor** at 115200. Expected boot output:
 [HELIOS] Init complete — entering main loop
 ```
 
-If TSL2591 or OV2640 shows failure, check I²C wiring and camera ribbon before proceeding.
+If GY302 or OV2640 shows failure, check I²C wiring and camera ribbon before proceeding.
 
 ---
 
@@ -312,7 +312,7 @@ Disconnect 12 V. Measure: +3.30 V ±0.05 V at ESP32-S3 VCC and STM32 VCC pins.
 From Helios serial monitor, trigger an I²C scan. Expected devices:
 
 ```
-0x29  →  TSL2591 (irradiance sensor)
+0x23  →  GY302 (irradiance sensor)
 0x40  →  INA219  (current/voltage sense)
 ```
 
@@ -357,7 +357,7 @@ With any device connected to the **Helios-MPPT** WiFi AP, open `http://192.168.4
 
 | Card | Source | Description |
 |------|--------|-------------|
-| G_meas | TSL2591 + OV2640 blend | Measured irradiance (W/m²) |
+| G_meas | GY302 + OV2640 blend | Measured irradiance (W/m²) |
 | G_pred | LSTM inference | Predicted irradiance 30 min ahead (W/m²) |
 | V_bat | INA219 via Artemis | Battery bus voltage (V) |
 | I_bat | INA219 via Artemis | Battery charging current (A) |
@@ -450,7 +450,7 @@ HEL:VP=17.23,GP=745.0,AL=0.32\r\n
 
 | Symptom | Likely cause | Fix |
 |---------|-------------|-----|
-| TSL2591 not found on I²C scan | Pull-up resistors missing or wrong address | Check R2/R3 (4.7 kΩ to 3.3 V) on SDA/SCL; TSL2591 addr is fixed at 0x29 |
+| GY302 not found on I²C scan | Pull-up resistors missing or wrong address | Check R2/R3 (4.7 kΩ to 3.3 V) on SDA/SCL; GY302 addr is fixed at 0x23 |
 | INA219 not found (0x40) | Address solder jumper or Kelvin wiring issue | Verify INA219 A0/A1 jumpers are open (default 0x40); check 4-wire Kelvin layout for R1 |
 | PA8 shows no PWM | TIM1 not started or ARR wrong | Confirm ARR=1439, Prescaler=0, HCLK=72 MHz; check `HAL_TIM_PWM_Start` is called in `Artemis_Init` |
 | Dashboard doesn't load | WiFi AP not started | Check serial log for `AP: Helios-MPPT` line; confirm `web_server_init()` runs without error |
@@ -468,7 +468,7 @@ HEL:VP=17.23,GP=745.0,AL=0.32\r\n
 | File | MCU | Purpose |
 |------|-----|---------|
 | `artemis_stm32f103.c` | STM32F103C8T6 | VS-P&O MPPT, CC/CV/Float FSM, INA219 driver, 50 kHz PWM, UART link |
-| `helios_esp32s3.cpp` | ESP32-S3 | LSTM inference, TSL2591 driver, TF.js dashboard, SD logging, UART link |
+| `helios_esp32s3.cpp` | ESP32-S3 | LSTM inference, GY302 driver, TF.js dashboard, SD logging, UART link |
 | `data/lstm_weights.json` | ESP32-S3 SPIFFS | LSTM weight store — empty `{}` for first deploy, replaced by TF.js after training |
 
 ---
