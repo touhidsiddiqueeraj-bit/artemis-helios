@@ -54,7 +54,7 @@ def fig1():
         if lbl: ax.text((x1+x2)/2,(y1+y2)/2+lo,lbl,ha='center',fontsize=5.8,color=col,style='italic')
 
     box(0.1,4.2,1.4,1.1,'PV Panel','50Wp Mono-Si',fc='#FFF9C4',ec='#F9A825')
-    box(1.85,4.2,1.5,1.1,'Buck Conv.','IRFZ44N+TC4420\n50 kHz',fc='#FCE4EC',ec=R)
+    box(1.85,4.2,1.5,1.1,'Buck Conv.','IRFB4110+TC4420\n50 kHz',fc='#FCE4EC',ec=R)
     box(3.65,4.2,1.3,1.1,'Battery','12V/7Ah SLA',fc='#E8F5E9',ec=G)
     box(5.25,4.2,1.2,1.1,'Load','DC Output',fc='#F1F8E9',ec='#558B2F')
     box(1.75,0.4,1.7,2.8,'ARTEMIS','STM32F103\nVS-P&O MPPT\nCC/CV\nINA219',fc='#EDE7F6',ec='#4527A0')

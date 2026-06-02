@@ -1,12 +1,14 @@
 """
 01_irradiance_generator.py
 ==========================
-Helios-Artemis: Markov-Chain Synthetic Irradiance Profile Generator
+Helios-Artemis: Markov-Chain + Ornstein-Uhlenbeck Synthetic Irradiance Profile Generator
 Parameterised from NASA POWER + SREDA Bangladesh Solar Resource Atlas
 Location: Sylhet, Bangladesh (24.89°N, 91.87°E)
 
 Generates:
   - Per-day 1-minute GHI profiles using a 4-state Markov chain
+  - Ornstein-Uhlenbeck sub-second flicker (tau=1s, sigma=25%)
+  - Aerosol attenuation (×0.93, Linke turbidity TL≈4.5)
   - Year 1 (training, seed = 137*day + 500)
   - Year 2 (independent test, seed = 251*day + 9999)
 
@@ -27,24 +29,37 @@ import os
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Monthly climatological parameters (NASA POWER + SREDA Sylhet)
+#     peak = clear-sky GHI peak before aerosol attenuation (W/m²)
+#     cvi  = Cloud Variability Index
 # ─────────────────────────────────────────────────────────────────────────────
+# Sylhet clear-sky peaks are ~800 W/m² in summer (before aerosol ×0.93)
+# aerosol ×0.93 gives the observed peak ~744 W/m² (July)
 MONTHLY_PARAMS = {
-     1: {"peak": 820, "cvi": 0.15, "sunrise": 6.30, "sunset": 17.40},
-     2: {"peak": 850, "cvi": 0.20, "sunrise": 6.13, "sunset": 17.80},
-     3: {"peak": 870, "cvi": 0.25, "sunrise": 5.90, "sunset": 18.20},
-     4: {"peak": 880, "cvi": 0.30, "sunrise": 5.60, "sunset": 18.60},
-     5: {"peak": 830, "cvi": 0.45, "sunrise": 5.40, "sunset": 18.90},
-     6: {"peak": 640, "cvi": 0.70, "sunrise": 5.30, "sunset": 19.00},
-     7: {"peak": 580, "cvi": 0.85, "sunrise": 5.30, "sunset": 19.10},
-     8: {"peak": 610, "cvi": 0.80, "sunrise": 5.50, "sunset": 19.00},
-     9: {"peak": 650, "cvi": 0.65, "sunrise": 5.80, "sunset": 18.20},
-    10: {"peak": 780, "cvi": 0.30, "sunrise": 6.00, "sunset": 17.60},
-    11: {"peak": 810, "cvi": 0.18, "sunrise": 6.20, "sunset": 17.30},
+     1: {"peak": 800, "cvi": 0.15, "sunrise": 6.30, "sunset": 17.40},
+     2: {"peak": 800, "cvi": 0.20, "sunrise": 6.13, "sunset": 17.80},
+     3: {"peak": 820, "cvi": 0.25, "sunrise": 5.90, "sunset": 18.20},
+     4: {"peak": 850, "cvi": 0.30, "sunrise": 5.60, "sunset": 18.60},
+     5: {"peak": 850, "cvi": 0.45, "sunrise": 5.40, "sunset": 18.90},
+     6: {"peak": 820, "cvi": 0.70, "sunrise": 5.30, "sunset": 19.00},
+     7: {"peak": 800, "cvi": 0.85, "sunrise": 5.30, "sunset": 19.10},
+     8: {"peak": 800, "cvi": 0.80, "sunrise": 5.50, "sunset": 19.00},
+     9: {"peak": 820, "cvi": 0.65, "sunrise": 5.80, "sunset": 18.20},
+    10: {"peak": 820, "cvi": 0.30, "sunrise": 6.00, "sunset": 17.60},
+    11: {"peak": 800, "cvi": 0.18, "sunrise": 6.20, "sunset": 17.30},
     12: {"peak": 800, "cvi": 0.15, "sunrise": 6.40, "sunset": 17.10},
 }
 
 # State irradiance multipliers
 STATE_MULTIPLIERS = np.array([1.00, 0.65, 0.20, 1.18])
+
+# Ornstein-Uhlenbeck sub-second flicker parameters (Lave & Kleissl 2010)
+# At 1-minute resolution, the OU process decorrelates between samples,
+# but we apply the correct steady-state standard deviation.
+OU_SIGMA_FRAC = 0.25      # 25% of cloud-filtered GHI
+OU_CLAMP_FRAC = 0.40      # clamp OU fast component to ±40% of clear-sky
+
+# Aerosol attenuation (Linke turbidity TL ≈ 4.5 for Sylhet)
+AEROSOL_FACTOR = 0.93
 
 
 def get_transition_matrix(cvi: float) -> np.ndarray:
@@ -73,11 +88,11 @@ def get_transition_matrix(cvi: float) -> np.ndarray:
 
 
 def clear_sky_ghi(hour: float, peak: float, sunrise: float, sunset: float) -> float:
-    """Sinusoidal clear-sky GHI model."""
+    """Sinusoidal clear-sky GHI model with aerosol attenuation (×0.93)."""
     if hour < sunrise or hour > sunset:
         return 0.0
     angle = math.pi * (hour - sunrise) / (sunset - sunrise)
-    return max(0.0, peak * math.sin(angle))
+    return max(0.0, peak * math.sin(angle) * AEROSOL_FACTOR)
 
 
 def month_from_doy(doy: int) -> int:
@@ -91,14 +106,14 @@ def month_from_doy(doy: int) -> int:
     return 12
 
 
-def generate_day_profile(doy: int, seed: int, noise_sigma_frac: float = 0.02) -> np.ndarray:
+def generate_day_profile(doy: int, seed: int) -> np.ndarray:
     """
     Generate a 1440-sample (1-minute resolution) GHI profile for one day.
+    Includes Ornstein-Uhlenbeck sub-second flicker and aerosol attenuation.
 
     Args:
         doy:              Day of year (1–365)
         seed:             Random seed for reproducibility
-        noise_sigma_frac: Gaussian noise as fraction of clear-sky GHI
 
     Returns:
         ghi: np.ndarray shape (1440,) — GHI in W/m²
@@ -110,6 +125,7 @@ def generate_day_profile(doy: int, seed: int, noise_sigma_frac: float = 0.02) ->
 
     state = 0
     ghi = np.zeros(1440)
+    gf = 0.0  # OU fast component
 
     for minute in range(1440):
         hour = minute / 60.0
@@ -125,8 +141,21 @@ def generate_day_profile(doy: int, seed: int, noise_sigma_frac: float = 0.02) ->
                     state = s
                     break
 
-        noise = rng.gauss(0.0, max(1.0, cs * noise_sigma_frac))
-        ghi[minute] = max(0.0, cs * STATE_MULTIPLIERS[state] + noise)
+        # Cloud-filtered GHI
+        gcf = cs * STATE_MULTIPLIERS[state]
+
+        # Ornstein-Uhlenbeck fast flicker (steady-state approximation at 1-minute)
+        if cs > 0:
+            sigma_f = OU_SIGMA_FRAC * max(gcf, 10.0)
+            gf = gf * 0.0 + sigma_f * rng.gauss(0.0, 1.0)
+            gf = max(-OU_CLAMP_FRAC * cs, min(OU_CLAMP_FRAC * cs, gf))
+        else:
+            gf = 0.0
+
+        # Measurement noise (sensor + ADC)
+        meas_noise = rng.gauss(0.0, max(1.0, cs * 0.02))
+
+        ghi[minute] = max(0.0, min(cs, gcf + gf + meas_noise))
 
     return ghi
 

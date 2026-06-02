@@ -21,6 +21,7 @@ plt.rcParams.update({
     'savefig.bbox':'tight','savefig.pad_inches':0.04,
 })
 
+np.random.seed(23)
 C1,C2 = 3.5, 7.16
 B,R,G,O,P,GR = '#1565C0','#C62828','#2E7D32','#E65100','#6A1B9A','#546E7A'
 

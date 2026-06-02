@@ -1,0 +1,4 @@
+hidden_units,n_params,epochs_run,final_train_mse,final_val_mse,r2_all,r2_daytime,mae_daytime_wm2,rmse_daytime_wm2,selected
+16,1169,46,0.002737,0.001886,0.9296,0.8351,54.52,72.47,False
+32,4385,60,0.002734,0.001917,0.9296,0.8346,54.68,72.57,True
+64,16961,43,0.002734,0.001873,0.9298,0.8371,54.09,72.03,False
