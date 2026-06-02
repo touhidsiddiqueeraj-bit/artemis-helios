@@ -803,7 +803,6 @@ void handleWiFiButton() {
 void handleWebServer() {
   if (!wifiActive) return;
   server.handleClient();
-  MDNS.update();
 }
 
 // ── Web server handlers ────────────────────────────────────────────────────
