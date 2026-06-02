@@ -98,13 +98,13 @@ def fig2():
     axes[0].legend(); axes[0].grid(True)
     axes[0].set_title('(a) Full-day Sylhet Markov+OU irradiance — July (3-state: overcast/partly/clear)')
     m=(th>=9.5)&(th<=11.5)
-    axes[1].plot(th[m],GG[m],color=B,lw=0.55,label='GHI with OU flicker (τ=1s, σ=25%)')
+    axes[1].plot(th[m],GG[m],color=B,lw=0.55,label='GHI with sub-second flicker (τ=1s, σ=25%)')
     axes[1].plot(th[m],Ge[m],'r--',lw=0.9,label='Clear-sky')
     axes[1].fill_between(th[m],GG[m],alpha=0.22,color=B)
     axes[1].set_xlabel('Time (h)'); axes[1].set_ylabel('GHI (W m⁻²)')
-    axes[1].set_title('(b) Zoom 09:30–11:30 h — sub-second OU flicker visible (Lave & Kleissl 2010)')
+    axes[1].set_title('(b) Zoom 09:30–11:30 h — sub-second irradiance flicker visible (Lave & Kleissl 2010)')
     axes[1].legend(); axes[1].grid(True)
-    fig.suptitle('Fig. 2.  Calibrated Sylhet irradiance model (Markov 15s state, OU flicker, aerosol attenuation)',fontsize=8.5,fontweight='bold')
+    fig.suptitle('Fig. 2.  Calibrated Sylhet irradiance model (Markov 15s state, sub-second flicker, aerosol attenuation)',fontsize=8.5,fontweight='bold')
     fig.tight_layout(); fig.savefig(f'{OUT}/fig2_irradiance.png'); plt.close(); print('[OK] Fig 2')
 
 # ── FIG 3: I-V / P-V curves ─────────────────────────────────────────────────

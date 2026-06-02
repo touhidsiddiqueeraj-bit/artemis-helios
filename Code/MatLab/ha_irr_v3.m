@@ -1,5 +1,5 @@
 function [sys,x0,str,ts]=ha_irr_v3(t,x,u,flag)
-% Sylhet Markov cloud model (15 s) + Ornstein-Uhlenbeck flicker
+% Sylhet Markov cloud model (15 s) + sub-second flicker
 % (tau=1 s, sigma=25%) + aerosol attenuation (0.93)
 % States: x(1)=cloud_state  x(2)=cloud_timer  x(3)=G_fast
 T_row1=[0.60 0.30 0.10]; T_row2=[0.20 0.50 0.30]; T_row3=[0.10 0.20 0.70];

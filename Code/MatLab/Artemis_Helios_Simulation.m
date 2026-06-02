@@ -15,10 +15,10 @@ delete('ha_irr_v3.m','ha_lstm_v3.m','ha_pv_v3.m','ha_buck_v3.m',...
 %% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 fprintf('Step 2: Writing S-functions...\n');
 
-%% -- ha_irr_v3 : Markov irradiance (15 s states) + OU flicker -------------
+%% -- ha_irr_v3 : Markov irradiance model -------------
 f = fopen('ha_irr_v3.m','w');
 fprintf(f,'function [sys,x0,str,ts]=ha_irr_v3(t,x,u,flag)\n');
-fprintf(f,'%% Sylhet Markov cloud model (15 s) + Ornstein-Uhlenbeck flicker\n');
+fprintf(f,'%% Sylhet Markov cloud model (15 s) + sub-second flicker\n');
 fprintf(f,'%% (tau=1 s, sigma=25%%) + aerosol attenuation (0.93)\n');
 fprintf(f,'%% States: x(1)=cloud_state  x(2)=cloud_timer  x(3)=G_fast\n');
 fprintf(f,'T_row1=[0.60 0.30 0.10]; T_row2=[0.20 0.50 0.30]; T_row3=[0.10 0.20 0.70];\n');
@@ -453,7 +453,7 @@ figure('Name','HA-MPPT v3 - Irradiance & Power','Color','w',...
 ax1 = subplot(3,1,1);
 plot(t_h, log_ghi,'Color',[0.85 0.55 0.10],'LineWidth',1.2);
 ylabel('GHI  (W/m^2)');
-title('Irradiance - Sylhet Markov + Ornstein-Uhlenbeck model');
+title('Irradiance - Sylhet Markov + sub-second flicker model');
 xlim([0 24]); grid on; grid minor;
 set(ax1,'XTick',0:2:24,'FontSize',10);
 xlabel('Time of day  (h)');

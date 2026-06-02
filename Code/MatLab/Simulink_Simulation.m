@@ -30,7 +30,7 @@ fprintf('Step 2: Writing S-functions...\n');
 %% ── ha_irr_v3 : Markov irradiance [F5] ─────────────────────────────────
 f=fopen('ha_irr_v3.m','w');
 fprintf(f,'function [sys,x0,str,ts]=ha_irr_v3(t,x,u,flag)\n');
-fprintf(f,'%% Sylhet Markov(15s) + OU flicker(tau=1s,sigma=25%%) + aerosol(0.93) [R1]\n');
+fprintf(f,'%% Sylhet Markov(15s) + sub-second flicker(tau=1s,sigma=25%%) + aerosol(0.93) [R1]\n');
 fprintf(f,'%% x(1)=cloud_state  x(2)=cloud_timer  x(3)=G_fast\n');
 fprintf(f,'T_row1=[0.60 0.30 0.10];T_row2=[0.20 0.50 0.30];T_row3=[0.10 0.20 0.70];\n');
 fprintf(f,'cf=[0.15 0.55 0.90];sunrise=5.5;sunset=18.5;\n');
@@ -71,7 +71,7 @@ fprintf(f,'end\n');
 fclose(f);
 fprintf('  [OK] ha_irr_v3.m\n');
 fprintf('  [OK] ha_irr_v3.m  [pre-seeded noise]\n');
-fprintf('  [OK] ha_irr_v3.m  [Markov + OU flicker + aerosol]\n');
+fprintf('  [OK] ha_irr_v3.m  [Markov + sub-second flicker + aerosol]\n');
 fprintf('  [OK] ha_irr_v3.m\n');
 
 %% ── ha_lstm_v3 : NARX predictor + UART lag [F1] ────────────────────────

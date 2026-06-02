@@ -24,13 +24,13 @@ Step	Label	Description
 4. S-Function Reference
 All S-functions are discrete-time (Ts = 0.1 s) implemented via the legacy switch-flag interface. Each is fully regenerated on every script run.
 4.1  ha_irr_v3.m — Markov Irradiance Model
-Simulates stochastic global horizontal irradiance (GHI) for a Sylhet July day using a 3-state Markov chain combined with an Ornstein-Uhlenbeck (OU) flicker process.
+Simulates stochastic global horizontal irradiance (GHI) for a Sylhet July day using a 3-state Markov chain combined with a sub-second flicker process.
 Parameter	Value / Description
 States	3 discrete: x(1)=cloud_state, x(2)=cloud_timer, x(3)=G_fast
 Outputs	1: GHI (W m⁻²)
 Markov states	0=overcast (cf=0.15), 1=partly cloudy (cf=0.55), 2=clear (cf=0.90)
 Transition interval	15 s — cloud state checked every 15 simulation seconds
-OU flicker	tau=1.0 s, sigma_frac=0.25 (25% of Gcf), clipped to ±40% of clear-sky
+Sub-second flicker	tau=1.0 s, sigma_frac=0.25 (25% of Gcf), clipped to ±40% of clear-sky
 Solar model	Gclear = 800 × aerosol × sin(π × fraction_of_day), aerosol = 0.93, peak ≈ 744 W m⁻²
 Sunrise / Sunset	05:30 / 18:30 local (Sylhet July)
 4.2  ha_lstm_v3.m — NARX Irradiance Predictor

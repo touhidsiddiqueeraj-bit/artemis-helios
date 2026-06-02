@@ -63,7 +63,7 @@ Fig. 2 — Irradiance Model  (fig2_irradiance.png)
 Property	Details
 Canvas	7.16 × 3.5 in, 2 rows × 1 col
 Subplot (a)	Full 24-hour GHI fill + clear-sky dashed envelope (aerosol ×0.93, peak 744 W m⁻²)
-Subplot (b)	Zoom 09:30–11:30 h showing OU flicker (τ=1 s, σ=25%)
+Subplot (b)	Zoom 09:30–11:30 h showing sub-second flicker (τ=1 s, σ=25%)
 Physics parameters	Markov transition matrix 3×3, cloud fractions [0.15, 0.55, 0.90], Sylhet sunrise 05:30 / sunset 18:30
 Random seed	23 (global)
 Output file	fig2_irradiance.png
