@@ -1,11 +1,11 @@
 /**
  * ╔══════════════════════════════════════════════════════════════════════╗
- * ║  HELIOS DATA LOGGER  —  v1.0  (single-file build)                   ║
+ * ║  HELIOS DATA LOGGER  —  v1.1  (single-file build)                   ║
  * ║  ESP32-S3 N16R8 · GY-302 (BH1750) · OV2640 · LittleFS             ║
  * ║                                                                      ║
  * ║  Logs irradiance (GY-302 BH1750) + sky blue channel (OV2640) to    ║
  * ║  internal flash every 10 s during daylight (lux-triggered).         ║
- * ║  Web dashboard + captive portal + mDNS (helios.local).              ║
+ * ║  Power-optimised: light sleep between samples, WiFi on-demand only. ║
  * ║                                                                      ║
  * ║  Hussain Touhid Siddiquee · Leading University Sylhet · 2026        ║
  * ╚══════════════════════════════════════════════════════════════════════╝
@@ -15,6 +15,7 @@
  * GY-302   SDA → GPIO 8   SCL → GPIO 9   VCC → 3.3V   GND → GND
  *          ADDR → GND (I2C 0x23)  |  ADDR → VCC (I2C 0x5C if conflict)
  * OV2640   — on-board (XIAO ESP32S3 Sense embedded module)
+ * BUTTON   → GPIO 0 (boot button already on XIAO — no extra wiring needed)
  *
  * LIBRARIES  (Arduino Library Manager)
  * ─────────────────────────────────────
@@ -25,22 +26,38 @@
  * ─────────────────────
  * Board            : ESP32S3 Dev Module  (or Seeed XIAO ESP32S3)
  * Flash Size       : 16MB
- * Partition Scheme : Default 8MB with spiffs  ← gives ~3.5 MB LittleFS
- *                    (enough for 14 days; use custom partitions.csv for more)
+ * Partition Scheme : Default 8MB with spiffs  (gives ~3.5 MB LittleFS)
  * PSRAM            : OPI PSRAM  (required for N16R8 camera framebuffer)
  * Upload Speed     : 921600
  *
+ * POWER STRATEGY  (v1.1)
+ * ───────────────────────
+ * · Light sleep between samples: awake ~2 s, sleep ~8 s per 10 s cycle
+ *   Reduces average draw from ~280 mA to ~60 mA during logging window
+ * · WiFi AP OFF during logging — enabled on-demand via button press only
+ *   Saves ~100 mA during the 12-hour logging window
+ * · WiFi auto-shutoff: AP turns off 5 min after last client disconnects
+ * · Night: lux-triggered stop + light sleep = ~2 mA average overnight
+ *
+ * ESTIMATED RUNTIME  (12V 7Ah + LM2596 @ 78% efficiency)
+ * ──────────────────────────────────────────────────────
+ * Logging  (12 h/day, WiFi off): ~60 mA @ 5V → ~32 mA from 12V battery
+ * Night    (12 h/day, sleeping): ~2 mA  @ 5V → ~1  mA from 12V battery
+ * Daily consumption: (32×12) + (1×12) = 396 mAh/day
+ * 7000 mAh / 396 = ~17.7 days  ✓ covers full 14-day deployment
+ *
  * ACCESS
  * ───────
- * 1. Power on — red LED blinks while waiting for daylight
- * 2. Connect phone/laptop to WiFi: "Helios-Logger"  pw: helios2026
- * 3. Captive portal opens automatically  — or go to http://192.168.4.1
- * 4. mDNS: http://helios.local  (works on iOS/macOS/Windows; use IP on Android)
+ * 1. Power on — logging starts automatically at sunrise (>20 lux)
+ * 2. Hold BOOT button (GPIO 0) for 2 seconds to toggle WiFi AP on/off
+ * 3. Connect phone/laptop to WiFi: "Helios-Logger"  pw: helios2026
+ * 4. Captive portal opens automatically — or go to http://192.168.4.1
+ * 5. mDNS: http://helios.local  (iOS/macOS/Windows; use IP on Android)
+ * 6. WiFi turns off automatically 5 min after last client disconnects
  *
  * CSV FORMAT  (/data/day_01.csv ... day_14.csv)
  * ────────────────────────────────────────────
  * uptime_ms, lux, irradiance_wm2, blue_channel
- * (BH1750 handles gain/timing internally — no raw sensor metadata needed)
  *
  * SIMULATION COMPARISON
  * ──────────────────────
@@ -332,6 +349,11 @@ const char DASHBOARD_HTML[] PROGMEM = R"rawhtml(
       <div class="stat-value" id="statUptime" style="font-size:16px">&#8212;</div>
       <div class="stat-sub">ms since day start</div>
     </div>
+    <div class="stat-card">
+      <div class="stat-label">WiFi Clients</div>
+      <div class="stat-value" id="statClients">&#8212;</div>
+      <div class="stat-sub">connected now</div>
+    </div>
   </div>
 
   <div class="section-label">Flash Storage</div>
@@ -473,6 +495,7 @@ async function fetchStatus() {
     }
     document.getElementById('statSamples').textContent = d.total_samples.toLocaleString();
     document.getElementById('statDay').textContent = d.day;
+    document.getElementById('statClients').textContent = d.clients !== undefined ? d.clients : '—';
     if (d.latest) {
       document.getElementById('statIrr').textContent   = d.latest.irradiance_wm2.toFixed(3);
       document.getElementById('statLux').textContent   = d.latest.lux.toFixed(1);
@@ -572,31 +595,49 @@ setInterval(fetchFiles,  30000);
 #include <LittleFS.h>
 #include <BH1750.h>
 #include "esp_camera.h"
+#include "esp_sleep.h"
+#include "esp_wifi.h"
 
 // ── Configuration ──────────────────────────────────────────────────────────
-#define AP_SSID             "Helios-Logger"
-#define AP_PASSWORD         "helios2026"
-#define MDNS_HOSTNAME       "helios"
-#define SAMPLE_INTERVAL_MS  10000UL
-#define LUX_START_THRESHOLD 20.0f
-#define LUX_STOP_THRESHOLD  8.0f
-#define DATA_DIR            "/data"
-#define MAX_DAYS            14
-#define I2C_SDA             8
-#define I2C_SCL             9
-#define LUX_TO_WM2          (1.0f / 116.0f)
-// BH1750 I2C address: 0x23 (ADDR pin LOW) or 0x5C (ADDR pin HIGH)
-#define BH1750_ADDR         0x23
+#define AP_SSID               "Helios-Logger"
+#define AP_PASSWORD           "helios2026"
+#define MDNS_HOSTNAME         "helios"
+#define SAMPLE_INTERVAL_MS    10000UL      // 10 s between samples
+#define AWAKE_BUDGET_MS       2000UL       // stay awake 2 s to read+write
+#define LUX_START_THRESHOLD   20.0f
+#define LUX_STOP_THRESHOLD    8.0f
+#define DATA_DIR              "/data"
+#define MAX_DAYS              14
+#define I2C_SDA               8
+#define I2C_SCL               9
+#define LUX_TO_WM2            (1.0f / 116.0f)
+#define BH1750_ADDR           0x23
+
+// ── WiFi on-demand ─────────────────────────────────────────────────────────
+#define WIFI_BTN_GPIO         0            // BOOT button — no extra wiring
+#define WIFI_BTN_HOLD_MS      2000UL       // hold 2 s to toggle AP
+#define WIFI_AUTO_OFF_MS      300000UL     // auto-off 5 min after last client
+
+// ── Light sleep ────────────────────────────────────────────────────────────
+// Sleep duration = sample interval minus awake budget, in microseconds
+#define SLEEP_US  ((SAMPLE_INTERVAL_MS - AWAKE_BUDGET_MS) * 1000ULL)
 
 // ── Globals ────────────────────────────────────────────────────────────────
 BH1750    lightMeter;
 WebServer server(80);
 
-bool     isLogging     = false;
-uint32_t lastSampleMs  = 0;
-uint32_t uptimeStartMs = 0;
-uint32_t dayCounter    = 0;
+bool     isLogging      = false;
+uint32_t lastSampleMs   = 0;
+uint32_t uptimeStartMs  = 0;
+uint32_t dayCounter     = 0;
 char     currentFile[32];
+
+// WiFi on-demand state
+bool     wifiActive         = false;
+uint32_t wifiStartMs        = 0;
+uint32_t lastClientMs       = 0;
+uint8_t  btnPrevState       = HIGH;
+uint32_t btnPressMs         = 0;
 
 #define LIVE_BUFFER_SIZE 360
 struct Sample {
@@ -619,8 +660,8 @@ void configureBH1750() {
 
 /**
  * Read lux from BH1750.
- * Returns true on valid reading, false on I²C communication error (returns -1).
- * BH1750 saturates cleanly at 54612 lux — no gain management needed.
+ * Returns true on valid reading, false if sensor returns error value (65535).
+ * BH1750 saturates cleanly — no gain management needed.
  */
 bool readBH1750(float &lux) {
   float reading = lightMeter.readLightLevel();
@@ -690,6 +731,81 @@ void pushToLiveBuffer(const Sample &s) {
   totalSamples++;
 }
 
+// ── WiFi on-demand management ──────────────────────────────────────────────
+
+void startWiFi() {
+  if (wifiActive) return;
+  Serial.println("[WiFi] Starting AP...");
+  WiFi.mode(WIFI_AP);
+  WiFi.softAP(AP_SSID, AP_PASSWORD);
+  IPAddress apIP(192, 168, 4, 1);
+  WiFi.softAPConfig(apIP, apIP, IPAddress(255, 255, 255, 0));
+  if (MDNS.begin(MDNS_HOSTNAME)) MDNS.addService("http", "tcp", 80);
+  server.begin();
+  wifiActive  = true;
+  wifiStartMs = millis();
+  lastClientMs = millis();
+  Serial.printf("[WiFi] AP up: %s  IP: 192.168.4.1\n", AP_SSID);
+}
+
+void stopWiFi() {
+  if (!wifiActive) return;
+  server.stop();
+  MDNS.end();
+  WiFi.softAPdisconnect(true);
+  WiFi.mode(WIFI_OFF);
+  esp_wifi_stop();
+  wifiActive = false;
+  Serial.println("[WiFi] AP stopped — power saved");
+}
+
+/**
+ * Check BOOT button for 2-second hold to toggle WiFi.
+ * Also tracks connected clients to auto-shutoff after WIFI_AUTO_OFF_MS.
+ * Call every loop iteration (cheap — just digitalRead + millis checks).
+ */
+void handleWiFiButton() {
+  uint8_t btnState = digitalRead(WIFI_BTN_GPIO);
+
+  // Detect press start
+  if (btnState == LOW && btnPrevState == HIGH) {
+    btnPressMs = millis();
+  }
+
+  // Detect 2-second hold
+  if (btnState == LOW && (millis() - btnPressMs >= WIFI_BTN_HOLD_MS)) {
+    if (wifiActive) {
+      stopWiFi();
+    } else {
+      startWiFi();
+    }
+    // Wait for release to avoid re-triggering
+    while (digitalRead(WIFI_BTN_GPIO) == LOW) delay(10);
+  }
+
+  btnPrevState = btnState;
+
+  // Auto-shutoff: turn off WiFi if no clients for WIFI_AUTO_OFF_MS
+  if (wifiActive) {
+    if (WiFi.softAPgetStationNum() > 0) {
+      lastClientMs = millis();           // client connected — reset timer
+    } else if (millis() - lastClientMs > WIFI_AUTO_OFF_MS) {
+      Serial.println("[WiFi] Auto-off: no clients for 5 min");
+      stopWiFi();
+    }
+  }
+}
+
+/**
+ * Handle web server + mDNS only when WiFi is active.
+ * No-op when WiFi is off — zero CPU overhead during logging.
+ */
+void handleWebServer() {
+  if (!wifiActive) return;
+  server.handleClient();
+  MDNS.update();
+}
+
 // ── Web server handlers ────────────────────────────────────────────────────
 void handleRoot() {
   server.sendHeader("Cache-Control", "no-cache");
@@ -729,13 +845,17 @@ void handleStatus() {
     "{\"logging\":%s,\"day\":%lu,\"current_file\":\"%s\","
     "\"total_samples\":%lu,\"lux_start_threshold\":%.1f,"
     "\"lux_stop_threshold\":%.1f,\"fs_total_kb\":%u,"
-    "\"fs_used_kb\":%u,\"fs_free_kb\":%u,\"file_count\":%u,\"latest\":%s}",
+    "\"fs_used_kb\":%u,\"fs_free_kb\":%u,\"file_count\":%u,"
+    "\"wifi_active\":%s,\"clients\":%u,\"latest\":%s}",
     isLogging ? "true" : "false",
     dayCounter + 1, currentFile, totalSamples,
     LUX_START_THRESHOLD, LUX_STOP_THRESHOLD,
     (unsigned)(totalBytes / 1024), (unsigned)(usedBytes / 1024),
     (unsigned)((totalBytes - usedBytes) / 1024),
-    fileCount, latestJson.c_str());
+    fileCount,
+    wifiActive ? "true" : "false",
+    (unsigned)WiFi.softAPgetStationNum(),
+    latestJson.c_str());
 
   server.sendHeader("Access-Control-Allow-Origin", "*");
   server.send(200, "application/json", json);
@@ -837,7 +957,6 @@ void setup() {
   // GY-302 (BH1750)
   Wire.begin(I2C_SDA, I2C_SCL);
   configureBH1750();
-  delay(180);  // wait for first measurement in HIGH_RES mode (~120 ms typ)
   // Verify sensor is responding
   float testLux = lightMeter.readLightLevel();
   if (testLux < 0) {
@@ -883,20 +1002,10 @@ void setup() {
     Serial.println("[CAM] OV2640 ready (RGB565 QVGA)");
   }
 
-  // WiFi AP
-  WiFi.mode(WIFI_AP);
-  WiFi.softAP(AP_SSID, AP_PASSWORD);
-  IPAddress apIP(192, 168, 4, 1);
-  WiFi.softAPConfig(apIP, apIP, IPAddress(255, 255, 255, 0));
-  Serial.printf("[WiFi] AP: %s  IP: 192.168.4.1\n", AP_SSID);
+  // Button pin for on-demand WiFi toggle
+  pinMode(WIFI_BTN_GPIO, INPUT_PULLUP);
 
-  // mDNS
-  if (MDNS.begin(MDNS_HOSTNAME)) {
-    MDNS.addService("http", "tcp", 80);
-    Serial.println("[mDNS] http://helios.local");
-  }
-
-  // Routes
+  // Register web server routes (server.begin() called only when WiFi starts)
   server.on("/",                          HTTP_GET,    handleRoot);
   server.on("/api/status",                HTTP_GET,    handleStatus);
   server.on("/api/live",                  HTTP_GET,    handleLive);
@@ -904,31 +1013,36 @@ void setup() {
   server.on("/download",                  HTTP_GET,    handleDownload);
   server.on("/api/delete",                HTTP_DELETE, handleDelete);
   server.on("/api/deleteall",             HTTP_DELETE, handleDeleteAll);
-  // Captive portal detection URLs
-  server.on("/generate_204",              HTTP_GET,    handleCaptivePortal); // Android
-  server.on("/connecttest.txt",           HTTP_GET,    handleCaptivePortal); // Windows
-  server.on("/hotspot-detect.html",       HTTP_GET,    handleCaptivePortal); // Apple
-  server.on("/library/test/success.html", HTTP_GET,    handleCaptivePortal); // Apple
-  server.on("/ncsi.txt",                  HTTP_GET,    handleCaptivePortal); // Windows
+  server.on("/generate_204",              HTTP_GET,    handleCaptivePortal);
+  server.on("/connecttest.txt",           HTTP_GET,    handleCaptivePortal);
+  server.on("/hotspot-detect.html",       HTTP_GET,    handleCaptivePortal);
+  server.on("/library/test/success.html", HTTP_GET,    handleCaptivePortal);
+  server.on("/ncsi.txt",                  HTTP_GET,    handleCaptivePortal);
   server.onNotFound(handleCaptivePortal);
 
-  server.begin();
-  Serial.println("[HELIOS] Boot complete — waiting for daylight (>20 lux)...");
+  // WiFi starts OFF — hold BOOT button 2 s to enable
+  WiFi.mode(WIFI_OFF);
+  esp_wifi_stop();
+
+  Serial.println("[HELIOS] Boot complete — WiFi OFF, logging on lux trigger");
+  Serial.println("[HELIOS] Hold BOOT button 2 s to toggle WiFi AP");
 }
 
 // ── Loop ───────────────────────────────────────────────────────────────────
 void loop() {
-  server.handleClient();
-  MDNS.update();
+  // Always check button and serve web requests — even during logging
+  handleWiFiButton();
+  handleWebServer();
 
   uint32_t now = millis();
   if (now - lastSampleMs < SAMPLE_INTERVAL_MS) return;
   lastSampleMs = now;
 
+  // ── Read sensor ───────────────────────────────────────────────────────
   float lux = 0.0f;
   readBH1750(lux);
 
-  // Start logging when lux crosses threshold
+  // ── Lux-triggered state machine ───────────────────────────────────────
   if (!isLogging && lux >= LUX_START_THRESHOLD) {
     isLogging     = true;
     uptimeStartMs = now;
@@ -936,7 +1050,6 @@ void loop() {
     Serial.printf("[LOG] Day %lu started — %.1f lux\n", dayCounter + 1, lux);
   }
 
-  // Stop logging when lux drops below hysteresis threshold
   if (isLogging && lux < LUX_STOP_THRESHOLD) {
     isLogging = false;
     dayCounter++;
@@ -944,17 +1057,36 @@ void loop() {
     Serial.printf("[LOG] Day ended — %.1f lux  total: %lu samples\n", lux, totalSamples);
   }
 
-  if (!isLogging) return;
+  // ── Sample + write ────────────────────────────────────────────────────
+  if (isLogging) {
+    Sample s;
+    s.uptime_ms      = now - uptimeStartMs;
+    s.lux            = lux;
+    s.irradiance_wm2 = lux * LUX_TO_WM2;
+    s.blue_channel   = captureBlueChannel();
 
-  Sample s;
-  s.uptime_ms      = now - uptimeStartMs;
-  s.lux            = lux;
-  s.irradiance_wm2 = lux * LUX_TO_WM2;
-  s.blue_channel   = captureBlueChannel();
+    writeSample(s);
+    pushToLiveBuffer(s);
 
-  writeSample(s);
-  pushToLiveBuffer(s);
+    Serial.printf("[SAMPLE] t=%lums  lux=%.1f  irr=%.3fW/m2  blue=%u\n",
+      s.uptime_ms, s.lux, s.irradiance_wm2, s.blue_channel);
+  }
 
-  Serial.printf("[SAMPLE] t=%lums  lux=%.1f  irr=%.3fW/m2  blue=%u\n",
-    s.uptime_ms, s.lux, s.irradiance_wm2, s.blue_channel);
+  // ── Light sleep between samples ───────────────────────────────────────
+  // Skip sleep if WiFi is active — clients need responsive server
+  if (!wifiActive) {
+    // Ensure remaining awake budget is used, then sleep
+    uint32_t elapsed = millis() - now;
+    if (elapsed < AWAKE_BUDGET_MS) {
+      delay(AWAKE_BUDGET_MS - elapsed);  // flush Serial, finish I2C
+    }
+
+    // Light sleep: CPU off, SRAM retained, peripherals paused
+    // GPIO wakeup on BOOT button allows instant WiFi toggle even during sleep
+    esp_sleep_enable_timer_wakeup(SLEEP_US);
+    esp_sleep_enable_gpio_wakeup();
+    gpio_wakeup_enable((gpio_num_t)WIFI_BTN_GPIO, GPIO_INTR_LOW_LEVEL);
+    esp_light_sleep_start();
+    // Execution resumes here after sleep
+  }
 }
