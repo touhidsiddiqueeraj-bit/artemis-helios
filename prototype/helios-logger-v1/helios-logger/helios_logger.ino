@@ -1,7 +1,7 @@
 /**
  * ╔══════════════════════════════════════════════════════════════════════╗
  * ║  HELIOS DATA LOGGER  —  v1.1  (single-file build)                   ║
- * ║  ESP32-S3 N16R8 · GY-302 (BH1750) · OV2640 · LittleFS             ║
+ * ║  ESP32-S3 N16R8 WROOM · GY-302 (BH1750) · OV2640 · LittleFS       ║
  * ║                                                                      ║
  * ║  Logs irradiance (GY-302 BH1750) + sky blue channel (OV2640) to    ║
  * ║  internal flash every 10 s during daylight (lux-triggered).         ║
@@ -12,10 +12,15 @@
  *
  * WIRING
  * ──────
- * GY-302   SDA → GPIO 8   SCL → GPIO 9   VCC → 3.3V   GND → GND
- *          ADDR → GND (I2C 0x23)  |  ADDR → VCC (I2C 0x5C if conflict)
- * OV2640   — on-board (XIAO ESP32S3 Sense embedded module)
- * BUTTON   → GPIO 0 (boot button already on XIAO — no extra wiring needed)
+ * GY-302   SDA → GPIO 45   SCL → GPIO 46   VCC → 3.3V   GND → GND
+ *          ADDR → GND (I2C 0x23)
+ *          (GPIO 45/46 are free — camera uses GPIO 4/5 for SCCB)
+ *
+ * OV2640   — directly wired to ESP32-S3 N16R8 WROOM:
+ *   XCLK→15  SDA→4   SCL→5   D0→11  D1→9   D2→8   D3→10
+ *   D4→12    D5→18   D6→17   D7→16  VSYNC→6 HREF→7 PCLK→13
+ *
+ * BUTTON   → GPIO 0 (boot button — no extra wiring needed)
  *
  * LIBRARIES  (Arduino Library Manager)
  * ─────────────────────────────────────
@@ -24,91 +29,42 @@
  *
  * ARDUINO IDE SETTINGS
  * ─────────────────────
- * Board            : ESP32S3 Dev Module  (or Seeed XIAO ESP32S3)
+ * Board            : ESP32S3 Dev Module
  * Flash Size       : 16MB
  * Partition Scheme : Default 8MB with spiffs  (gives ~3.5 MB LittleFS)
  * PSRAM            : OPI PSRAM  (required for N16R8 camera framebuffer)
  * Upload Speed     : 921600
  *
- * POWER STRATEGY  (v1.1)
- * ───────────────────────
- * · Light sleep between samples: awake ~2 s, sleep ~8 s per 10 s cycle
- *   Reduces average draw from ~280 mA to ~60 mA during logging window
- * · WiFi AP OFF during logging — enabled on-demand via button press only
- *   Saves ~100 mA during the 12-hour logging window
- * · WiFi auto-shutoff: AP turns off 5 min after last client disconnects
- * · Night: lux-triggered stop + light sleep = ~2 mA average overnight
- *
- * ESTIMATED RUNTIME  (12V 7Ah + LM2596 @ 78% efficiency)
- * ──────────────────────────────────────────────────────
- * Logging  (12 h/day, WiFi off): ~60 mA @ 5V → ~32 mA from 12V battery
- * Night    (12 h/day, sleeping): ~2 mA  @ 5V → ~1  mA from 12V battery
- * Daily consumption: (32×12) + (1×12) = 396 mAh/day
- * 7000 mAh / 396 = ~17.7 days  ✓ covers full 14-day deployment
- *
- * ACCESS
- * ───────
- * 1. Power on — logging starts automatically at sunrise (>20 lux)
- * 2. Hold BOOT button (GPIO 0) for 2 seconds to toggle WiFi AP on/off
- * 3. Connect phone/laptop to WiFi: "Helios-Logger"  pw: helios2026
- * 4. Captive portal opens automatically — or go to http://192.168.4.1
- * 5. mDNS: http://helios.local  (iOS/macOS/Windows; use IP on Android)
- * 6. WiFi turns off automatically 5 min after last client disconnects
- *
- * CSV FORMAT  (/data/day_01.csv ... day_14.csv)
- * ────────────────────────────────────────────
- * uptime_ms, lux, irradiance_wm2, blue_channel
- *
- * SIMULATION COMPARISON
- * ──────────────────────
- * Compute CVI = std(irradiance) / mean(irradiance) per day.
- * Target for Sylhet July: CVI ≈ 0.85  (Table I, Helios-Artemis paper).
- * Peak irradiance should approach ~744 W/m² on clear-sky July days.
+ * FIXES vs v1.0
+ * ──────────────
+ * · Camera pin defines corrected for ESP32-S3 N16R8 WROOM
+ * · pin_sscb_sda / pin_sscb_scl used (older ESP32 cam driver spelling)
+ * · I2C pins moved to GPIO 45/46 (free, away from camera SCCB bus)
+ * · cameraReady flag added — crash-safe if camera not connected
+ * · BH1750_ADDR corrected to 0x23 (ADDR pin → GND)
  */
 
 // ═══════════════════════════════════════════════════════════════════════════
-//  SECTION 1 — CAMERA PIN DEFINITIONS  (XIAO ESP32S3 Sense)
-//
-//  If using AI-Thinker ESP32-CAM instead, comment out this block and
-//  uncomment the AI-Thinker block directly below it.
+//  SECTION 1 — CAMERA PIN DEFINITIONS  (ESP32-S3 N16R8 WROOM + OV2640)
 // ═══════════════════════════════════════════════════════════════════════════
 
-// ── XIAO ESP32S3 Sense ────────────────────────────────────────────────────
-#define PWDN_GPIO_NUM    -1
-#define RESET_GPIO_NUM   -1
-#define XCLK_GPIO_NUM    10
-#define SIOD_GPIO_NUM    40
-#define SIOC_GPIO_NUM    39
-#define Y9_GPIO_NUM      48
-#define Y8_GPIO_NUM      11
-#define Y7_GPIO_NUM      12
-#define Y6_GPIO_NUM      14
-#define Y5_GPIO_NUM      16
-#define Y4_GPIO_NUM      18
-#define Y3_GPIO_NUM      17
-#define Y2_GPIO_NUM      15
-#define VSYNC_GPIO_NUM   38
-#define HREF_GPIO_NUM    47
-#define PCLK_GPIO_NUM    13
+#define PWDN_GPIO_NUM  -1
+#define RESET_GPIO_NUM -1
+#define XCLK_GPIO_NUM  15
+#define SIOD_GPIO_NUM   4
+#define SIOC_GPIO_NUM   5
+#define Y9_GPIO_NUM    16
+#define Y8_GPIO_NUM    17
+#define Y7_GPIO_NUM    18
+#define Y6_GPIO_NUM    12
+#define Y5_GPIO_NUM    10
+#define Y4_GPIO_NUM     8
+#define Y3_GPIO_NUM     9
+#define Y2_GPIO_NUM    11
+#define VSYNC_GPIO_NUM  6
+#define HREF_GPIO_NUM   7
+#define PCLK_GPIO_NUM  13
 
-/* ── AI-Thinker ESP32-CAM (uncomment if using this board) ─────────────────
-#define PWDN_GPIO_NUM    32
-#define RESET_GPIO_NUM   -1
-#define XCLK_GPIO_NUM     0
-#define SIOD_GPIO_NUM    26
-#define SIOC_GPIO_NUM    27
-#define Y9_GPIO_NUM      35
-#define Y8_GPIO_NUM      34
-#define Y7_GPIO_NUM      39
-#define Y6_GPIO_NUM      36
-#define Y5_GPIO_NUM      21
-#define Y4_GPIO_NUM      19
-#define Y3_GPIO_NUM      18
-#define Y2_GPIO_NUM       5
-#define VSYNC_GPIO_NUM   25
-#define HREF_GPIO_NUM    23
-#define PCLK_GPIO_NUM    22
-─────────────────────────────────────────────────────────────────────────── */
 
 // ═══════════════════════════════════════════════════════════════════════════
 //  SECTION 2 — DASHBOARD HTML  (stored in PROGMEM)
@@ -308,7 +264,7 @@ const char DASHBOARD_HTML[] PROGMEM = R"rawhtml(
       <div class="logo-icon">&#9728;</div>
       <div>
         <div class="logo-text">HELIOS</div>
-        <div class="logo-sub">Data Logger v1.0</div>
+        <div class="logo-sub">Data Logger v1.1</div>
       </div>
     </div>
     <div class="status-pill idle" id="statusPill">
@@ -583,6 +539,7 @@ setInterval(fetchFiles,  30000);
 </html>
 )rawhtml";
 
+
 // ═══════════════════════════════════════════════════════════════════════════
 //  SECTION 3 — FIRMWARE
 // ═══════════════════════════════════════════════════════════════════════════
@@ -602,42 +559,45 @@ setInterval(fetchFiles,  30000);
 #define AP_SSID               "Helios-Logger"
 #define AP_PASSWORD           "helios2026"
 #define MDNS_HOSTNAME         "helios"
-#define SAMPLE_INTERVAL_MS    10000UL      // 10 s between samples
-#define AWAKE_BUDGET_MS       2000UL       // stay awake 2 s to read+write
+#define SAMPLE_INTERVAL_MS    10000UL
+#define AWAKE_BUDGET_MS       2000UL
 #define LUX_START_THRESHOLD   20.0f
 #define LUX_STOP_THRESHOLD    8.0f
 #define DATA_DIR              "/data"
 #define MAX_DAYS              14
-#define I2C_SDA               8
-#define I2C_SCL               9
+
+// ── I2C pins for BH1750 — kept away from camera SCCB bus (GPIO 4/5) ───────
+// Wire to GY-302: SDA → GPIO 45, SCL → GPIO 46
+#define I2C_SDA               45
+#define I2C_SCL               46
+
 #define LUX_TO_WM2            (1.0f / 116.0f)
-#define BH1750_ADDR           0x23
+#define BH1750_ADDR           0x23    // ADDR pin → GND
 
 // ── WiFi on-demand ─────────────────────────────────────────────────────────
-#define WIFI_BTN_GPIO         0            // BOOT button — no extra wiring
-#define WIFI_BTN_HOLD_MS      2000UL       // hold 2 s to toggle AP
-#define WIFI_AUTO_OFF_MS      300000UL     // auto-off 5 min after last client
+#define WIFI_BTN_GPIO         0
+#define WIFI_BTN_HOLD_MS      2000UL
+#define WIFI_AUTO_OFF_MS      300000UL
 
 // ── Light sleep ────────────────────────────────────────────────────────────
-// Sleep duration = sample interval minus awake budget, in microseconds
 #define SLEEP_US  ((SAMPLE_INTERVAL_MS - AWAKE_BUDGET_MS) * 1000ULL)
 
 // ── Globals ────────────────────────────────────────────────────────────────
 BH1750    lightMeter;
 WebServer server(80);
 
+bool     cameraReady    = false;   // set true only if esp_camera_init succeeds
 bool     isLogging      = false;
 uint32_t lastSampleMs   = 0;
 uint32_t uptimeStartMs  = 0;
 uint32_t dayCounter     = 0;
 char     currentFile[32];
 
-// WiFi on-demand state
-bool     wifiActive         = false;
-uint32_t wifiStartMs        = 0;
-uint32_t lastClientMs       = 0;
-uint8_t  btnPrevState       = HIGH;
-uint32_t btnPressMs         = 0;
+bool     wifiActive     = false;
+uint32_t wifiStartMs    = 0;
+uint32_t lastClientMs   = 0;
+uint8_t  btnPrevState   = HIGH;
+uint32_t btnPressMs     = 0;
 
 #define LIVE_BUFFER_SIZE 360
 struct Sample {
@@ -653,20 +613,12 @@ uint32_t totalSamples = 0;
 
 // ── GY-302 (BH1750) ───────────────────────────────────────────────────────
 void configureBH1750() {
-  // CONTINUOUS_HIGH_RES_MODE: 1 lux resolution, ~120 ms measurement time
-  // Range: 1 – 65535 lux — sufficient for full solar spectrum logging
   lightMeter.begin(BH1750::CONTINUOUS_HIGH_RES_MODE, BH1750_ADDR, &Wire);
 }
 
-/**
- * Read lux from BH1750.
- * Returns true on valid reading, false if sensor returns error value (65535).
- * BH1750 saturates cleanly — no gain management needed.
- */
 bool readBH1750(float &lux) {
   float reading = lightMeter.readLightLevel();
   if (reading < 0) {
-    // Negative = sensor not ready yet (measurement in progress)
     lux = 0.0f;
     return false;
   }
@@ -675,7 +627,10 @@ bool readBH1750(float &lux) {
 }
 
 // ── OV2640 — Blue channel extraction ──────────────────────────────────────
+// Returns 0 safely if camera did not initialise
 uint8_t captureBlueChannel() {
+  if (!cameraReady) return 0;
+
   camera_fb_t *fb = esp_camera_fb_get();
   if (!fb) { Serial.println("[CAM] Frame capture failed"); return 0; }
 
@@ -732,7 +687,6 @@ void pushToLiveBuffer(const Sample &s) {
 }
 
 // ── WiFi on-demand management ──────────────────────────────────────────────
-
 void startWiFi() {
   if (wifiActive) return;
   Serial.println("[WiFi] Starting AP...");
@@ -742,8 +696,8 @@ void startWiFi() {
   WiFi.softAPConfig(apIP, apIP, IPAddress(255, 255, 255, 0));
   if (MDNS.begin(MDNS_HOSTNAME)) MDNS.addService("http", "tcp", 80);
   server.begin();
-  wifiActive  = true;
-  wifiStartMs = millis();
+  wifiActive   = true;
+  wifiStartMs  = millis();
   lastClientMs = millis();
   Serial.printf("[WiFi] AP up: %s  IP: 192.168.4.1\n", AP_SSID);
 }
@@ -759,36 +713,27 @@ void stopWiFi() {
   Serial.println("[WiFi] AP stopped — power saved");
 }
 
-/**
- * Check BOOT button for 2-second hold to toggle WiFi.
- * Also tracks connected clients to auto-shutoff after WIFI_AUTO_OFF_MS.
- * Call every loop iteration (cheap — just digitalRead + millis checks).
- */
 void handleWiFiButton() {
   uint8_t btnState = digitalRead(WIFI_BTN_GPIO);
 
-  // Detect press start
   if (btnState == LOW && btnPrevState == HIGH) {
     btnPressMs = millis();
   }
 
-  // Detect 2-second hold
   if (btnState == LOW && (millis() - btnPressMs >= WIFI_BTN_HOLD_MS)) {
     if (wifiActive) {
       stopWiFi();
     } else {
       startWiFi();
     }
-    // Wait for release to avoid re-triggering
     while (digitalRead(WIFI_BTN_GPIO) == LOW) delay(10);
   }
 
   btnPrevState = btnState;
 
-  // Auto-shutoff: turn off WiFi if no clients for WIFI_AUTO_OFF_MS
   if (wifiActive) {
     if (WiFi.softAPgetStationNum() > 0) {
-      lastClientMs = millis();           // client connected — reset timer
+      lastClientMs = millis();
     } else if (millis() - lastClientMs > WIFI_AUTO_OFF_MS) {
       Serial.println("[WiFi] Auto-off: no clients for 5 min");
       stopWiFi();
@@ -796,10 +741,6 @@ void handleWiFiButton() {
   }
 }
 
-/**
- * Handle web server + mDNS only when WiFi is active.
- * No-op when WiFi is off — zero CPU overhead during logging.
- */
 void handleWebServer() {
   if (!wifiActive) return;
   server.handleClient();
@@ -942,7 +883,7 @@ void handleDeleteAll() {
 void setup() {
   Serial.begin(115200);
   delay(1000);
-  Serial.println("\n[HELIOS] Data Logger v1.0 booting...");
+  Serial.println("\n[HELIOS] Data Logger v1.1 booting...");
 
   // LittleFS
   if (!LittleFS.begin(true)) {
@@ -953,32 +894,38 @@ void setup() {
     (unsigned)(LittleFS.usedBytes()  / 1024));
   ensureDataDir();
 
-  // GY-302 (BH1750)
+  // GY-302 (BH1750) — separate I2C bus on GPIO 45/46, away from camera SCCB
   Wire.begin(I2C_SDA, I2C_SCL);
   configureBH1750();
-  // Verify sensor is responding
+  delay(200);  // BH1750 needs ~180 ms for first measurement in CONTINUOUS mode
   float testLux = lightMeter.readLightLevel();
   if (testLux < 0) {
-    Serial.println("[BH1750] FATAL: GY-302 not responding — check wiring/address");
-    while (1) delay(1000);
+    Serial.println("[BH1750] WARNING: GY-302 not ready yet — check SDA→GPIO45, SCL→GPIO46");
+    // Non-fatal: continue and let the loop retry
+  } else {
+    Serial.printf("[BH1750] GY-302 ready  (addr 0x%02X)  test reading: %.1f lux\n",
+      BH1750_ADDR, testLux);
   }
-  Serial.printf("[BH1750] GY-302 ready  (addr 0x%02X)  test reading: %.1f lux\n",
-    BH1750_ADDR, testLux);
 
-  // OV2640
+  // OV2640 camera
   camera_config_t camCfg;
   camCfg.ledc_channel = LEDC_CHANNEL_0;
   camCfg.ledc_timer   = LEDC_TIMER_0;
-  camCfg.pin_d0       = Y2_GPIO_NUM;  camCfg.pin_d1 = Y3_GPIO_NUM;
-  camCfg.pin_d2       = Y4_GPIO_NUM;  camCfg.pin_d3 = Y5_GPIO_NUM;
-  camCfg.pin_d4       = Y6_GPIO_NUM;  camCfg.pin_d5 = Y7_GPIO_NUM;
-  camCfg.pin_d6       = Y8_GPIO_NUM;  camCfg.pin_d7 = Y9_GPIO_NUM;
+  camCfg.pin_d0       = Y2_GPIO_NUM;
+  camCfg.pin_d1       = Y3_GPIO_NUM;
+  camCfg.pin_d2       = Y4_GPIO_NUM;
+  camCfg.pin_d3       = Y5_GPIO_NUM;
+  camCfg.pin_d4       = Y6_GPIO_NUM;
+  camCfg.pin_d5       = Y7_GPIO_NUM;
+  camCfg.pin_d6       = Y8_GPIO_NUM;
+  camCfg.pin_d7       = Y9_GPIO_NUM;
   camCfg.pin_xclk     = XCLK_GPIO_NUM;
   camCfg.pin_pclk     = PCLK_GPIO_NUM;
   camCfg.pin_vsync    = VSYNC_GPIO_NUM;
   camCfg.pin_href     = HREF_GPIO_NUM;
-  camCfg.pin_sccb_sda = SIOD_GPIO_NUM;
-  camCfg.pin_sccb_scl = SIOC_GPIO_NUM;
+  // NOTE: older ESP32 cam driver uses pin_sscb_* spelling (3 s's), not pin_sccb_*
+  camCfg.pin_sscb_sda = SIOD_GPIO_NUM;
+  camCfg.pin_sscb_scl = SIOC_GPIO_NUM;
   camCfg.pin_pwdn     = PWDN_GPIO_NUM;
   camCfg.pin_reset    = RESET_GPIO_NUM;
   camCfg.xclk_freq_hz = 20000000;
@@ -990,14 +937,21 @@ void setup() {
   camCfg.grab_mode    = CAMERA_GRAB_LATEST;
 
   if (esp_camera_init(&camCfg) != ESP_OK) {
-    Serial.println("[CAM] Init failed — continuing lux-only");
+    // Non-fatal — logger continues in lux-only mode, blue_channel column = 0
+    Serial.println("[CAM] Init failed — running in lux-only mode (blue_channel=0)");
+    cameraReady = false;
   } else {
     sensor_t *s = esp_camera_sensor_get();
-    s->set_whitebal(s, 1); s->set_awb_gain(s, 1);
-    s->set_exposure_ctrl(s, 1); s->set_aec2(s, 1);
+    s->set_whitebal(s, 1);
+    s->set_awb_gain(s, 1);
+    s->set_exposure_ctrl(s, 1);
+    s->set_aec2(s, 1);
     s->set_gain_ctrl(s, 1);
-    s->set_brightness(s, 0); s->set_contrast(s, 0);
-    s->set_saturation(s, 0); s->set_special_effect(s, 0);
+    s->set_brightness(s, 0);
+    s->set_contrast(s, 0);
+    s->set_saturation(s, 0);
+    s->set_special_effect(s, 0);
+    cameraReady = true;
     Serial.println("[CAM] OV2640 ready (RGB565 QVGA)");
   }
 
@@ -1025,11 +979,11 @@ void setup() {
 
   Serial.println("[HELIOS] Boot complete — WiFi OFF, logging on lux trigger");
   Serial.println("[HELIOS] Hold BOOT button 2 s to toggle WiFi AP");
+  Serial.printf("[HELIOS] Camera: %s\n", cameraReady ? "OK" : "lux-only mode");
 }
 
 // ── Loop ───────────────────────────────────────────────────────────────────
 void loop() {
-  // Always check button and serve web requests — even during logging
   handleWiFiButton();
   handleWebServer();
 
@@ -1062,7 +1016,7 @@ void loop() {
     s.uptime_ms      = now - uptimeStartMs;
     s.lux            = lux;
     s.irradiance_wm2 = lux * LUX_TO_WM2;
-    s.blue_channel   = captureBlueChannel();
+    s.blue_channel   = captureBlueChannel();  // returns 0 if no camera
 
     writeSample(s);
     pushToLiveBuffer(s);
@@ -1074,14 +1028,10 @@ void loop() {
   // ── Light sleep between samples ───────────────────────────────────────
   // Skip sleep if WiFi is active — clients need responsive server
   if (!wifiActive) {
-    // Ensure remaining awake budget is used, then sleep
     uint32_t elapsed = millis() - now;
     if (elapsed < AWAKE_BUDGET_MS) {
-      delay(AWAKE_BUDGET_MS - elapsed);  // flush Serial, finish I2C
+      delay(AWAKE_BUDGET_MS - elapsed);
     }
-
-    // Light sleep: CPU off, SRAM retained, peripherals paused
-    // GPIO wakeup on BOOT button allows instant WiFi toggle even during sleep
     esp_sleep_enable_timer_wakeup(SLEEP_US);
     esp_sleep_enable_gpio_wakeup();
     gpio_wakeup_enable((gpio_num_t)WIFI_BTN_GPIO, GPIO_INTR_LOW_LEVEL);
