@@ -116,7 +116,7 @@
  */
 
 // ═══════════════════════════════════════════════════════════════════════════
-//  SECTION 0 — INCLUDES (moved here to avoid conflicts)
+//  SECTION 0 — INCLUDES
 // ═══════════════════════════════════════════════════════════════════════════
 #include <Arduino.h>
 #include <Wire.h>
@@ -162,10 +162,7 @@
 #define PCLK_GPIO_NUM  13
 
 // ═══════════════════════════════════════════════════════════════════════════
-//  SECTION 2 — ON-DEVICE SOLAR CALCULATOR  (NOAA / Meeus algorithm)
-//  Works for any latitude, longitude, UTC offset and year.
-//  Accuracy: ±1 minute anywhere on Earth.
-//  No lookup table — computed on demand from config.lat/lon/utc_offset.
+//  SECTION 2 — SOLAR CALCULATOR  (NOAA / Meeus algorithm)
 // ═══════════════════════════════════════════════════════════════════════════
 
 // Convert Gregorian date to Julian Day Number
@@ -249,26 +246,17 @@ static bool calcSunTimes(int yr, int mo, int dy,
 
 // ═══════════════════════════════════════════════════════════════════════════
 //  WEBLOGGER — Wireless serial monitor over SSE
-//  Shared between Guardian and Helios v1.8+
-//  Usage:
-//    wlog("message")              — plain log
-//    wlogf("[TAG] val=%d", val)   — formatted log (printf-style, max 220 chars)
-//  Endpoints registered by registerWebLogger(server):
-//    GET /serial      — log viewer page
-//    GET /serial/stream — SSE stream (text/event-stream)
-//    GET /serial/dump  — last N lines as plain text
 // ═══════════════════════════════════════════════════════════════════════════
 #define WLOG_LINES   120          // ring buffer depth
 #define WLOG_WIDTH   224          // max chars per line (including timestamp)
 #define WLOG_BUF_MS  40           // SSE flush interval ms
 
 static char     _wlogBuf[WLOG_LINES][WLOG_WIDTH];
-static uint16_t _wlogHead   = 0;   // next write slot
-static uint16_t _wlogCount  = 0;   // total lines written (caps at WLOG_LINES)
-static uint32_t _wlogSerial = 0;   // monotonic line counter for SSE cursor
+static uint16_t _wlogHead   = 0;
+static uint16_t _wlogCount  = 0;
+static uint32_t _wlogSerial = 0;
 static uint32_t _wlogBootMs = 0;
 
-// Internal write — called by wlog/wlogf
 static void _wlogWrite(const char *line) {
   uint32_t ms = millis() - _wlogBootMs;
   snprintf(_wlogBuf[_wlogHead], WLOG_WIDTH,
@@ -277,7 +265,7 @@ static void _wlogWrite(const char *line) {
   _wlogHead = (_wlogHead + 1) % WLOG_LINES;
   if(_wlogCount < WLOG_LINES) _wlogCount++;
   _wlogSerial++;
-  Serial.println(line);   // always mirror to hardware serial
+  Serial.println(line);
 }
 
 void wlog(const char *msg)  { _wlogWrite(msg); }
@@ -493,16 +481,12 @@ init();
 </body></html>
 )SERLOG";
 
-// ── SSE state ─────────────────────────────────────────────────────────────────
 static WiFiClient _sseCli;
 static bool       _sseActive  = false;
-static uint16_t   _sseCursor  = 0;   // last serial sent to client
+static uint16_t   _sseCursor  = 0;
 static uint32_t   _sseLastMs  = 0;
 
-// Forward declaration for _sseSendLine
 static void _sseSendLine(WiFiClient &cli, const char *line);
-
-// ── Web handlers ──────────────────────────────────────────────────────────────
 static WebServer *_wlogServer = nullptr;
 
 void handleSerialPage() {
@@ -511,7 +495,6 @@ void handleSerialPage() {
 }
 
 void handleSerialStream() {
-  // Only one SSE client at a time — close any existing
   if(_sseActive) { _sseCli.stop(); _sseActive = false; }
 
   WiFiClient cli = _wlogServer->client();
@@ -521,7 +504,7 @@ void handleSerialStream() {
             "Connection: keep-alive\r\n"
             "Access-Control-Allow-Origin: *\r\n\r\n");
 
-  // Replay last WLOG_LINES lines first
+
   uint16_t start = (_wlogCount >= WLOG_LINES) ? _wlogHead : 0;
   for(uint16_t i = 0; i < _wlogCount; i++) {
     uint16_t idx = (start + i) % WLOG_LINES;
@@ -546,14 +529,12 @@ void handleSerialDump() {
   _wlogServer->send(200,"text/plain",out);
 }
 
-// Definition of _sseSendLine
 static void _sseSendLine(WiFiClient &cli, const char *line) {
   cli.print("data: ");
   cli.print(line);
   cli.print("\n\n");
 }
 
-// Call from loop() — drains new lines to SSE client
 void webLoggerLoop() {
   if(!_sseActive) return;
   if(!_sseCli.connected()) { _sseActive = false; return; }
@@ -561,10 +542,9 @@ void webLoggerLoop() {
   if(now - _sseLastMs < WLOG_BUF_MS) return;
   _sseLastMs = now;
 
-  // How many new lines since cursor?
   if(_wlogSerial == _sseCursor) return;
   uint32_t lag = _wlogSerial - _sseCursor;
-  if(lag > WLOG_LINES) lag = WLOG_LINES;  // client fell behind, send what we have
+  if(lag > WLOG_LINES) lag = WLOG_LINES;
 
   uint32_t startSeq = _wlogSerial - lag;
   for(uint32_t i = 0; i < lag; i++) {
@@ -581,12 +561,9 @@ void registerWebLogger(WebServer &srv) {
   srv.on("/serial/stream", HTTP_GET, handleSerialStream);
   srv.on("/serial/dump",   HTTP_GET, handleSerialDump);
 }
-// ═══════════════════════════════════════════════════════════════════════════
-//  END WEBLOGGER
-// ═══════════════════════════════════════════════════════════════════════════
 
 // ═══════════════════════════════════════════════════════════════════════════
-//  SECTION 3 — HTML: DASHBOARD (light mode, outdoor-readable)
+//  SECTION 3 — HTML: DASHBOARD
 // ═══════════════════════════════════════════════════════════════════════════
 
 const char DASHBOARD_HTML[] PROGMEM = R"DASH(
@@ -2205,29 +2182,18 @@ loadLocationInfo();
 #define WDT_TIMEOUT_S    30
 #define BH1750_SDA       45
 #define BH1750_SCL       46
-// RTC shares the BH1750 Wire bus (GPIO45/46) — DS3231=0x68, BH1750=0x23, no conflict
-#define WIFI_BTN1        0    // BOOT button
-#define WIFI_BTN2        3    // external button
+#define WIFI_BTN1        0
+#define WIFI_BTN2        3
 #define WIFI_BTN_HOLD_MS 2000UL
 #define I2C_RECOVERY_CLK 9
 #define BH1750_ADDR      0x23
 #define LUX_TO_WM2       (1.0f/116.0f)
 #define LIVE_BUFFER_SIZE 360
-// ── RGB NeoPixel (WS2812B) on GPIO 48 — ESP32-S3 WROOM built-in ─────────────
-// GPIO 48 is NOT a plain GPIO LED; it is a WS2812B and needs the NeoPixel
-// RMT protocol.  digitalWrite() does nothing on this pin.
 #define STATUS_LED_PIN   48
 #define STATUS_LED_COUNT 1
-// Colours used by the status machine (R, G, B — 0-255)
-#define LED_COL_WIFI     0,   0, 180   // solid blue  — WiFi AP active
-#define LED_COL_ERROR  180,   0,   0   // fast blink red   — error / thermal
-#define LED_COL_LOG      0, 120,   0   // slow blink green — logging active
-static Adafruit_NeoPixel _ledStrip(STATUS_LED_COUNT, STATUS_LED_PIN, NEO_GRB + NEO_KHZ800);
-#define TEMP_SLEEP_S     120  // default thermal cooldown sleep seconds
+#define TEMP_SLEEP_S     120
 
-// ── Runtime config (loaded from LittleFS, adjustable via settings page) ────
 struct Config {
-  // -- Logging parameters (user-adjustable via Settings page) --------------
   uint32_t sample_interval_s  = 10;
   uint32_t img_interval_min   = 3;
   uint8_t  jpeg_quality       = 5;
@@ -2235,13 +2201,12 @@ struct Config {
   uint32_t wifi_autooff_min   = 5;
   float    outlier_factor     = 10.0f;
   uint8_t  night_confirm      = 5;
-  float    temp_shutdown_c    = 75.0f;  // die temp threshold °C  (0 = disabled)
-  uint16_t temp_sleep_s       = 120;    // cooldown sleep duration seconds
-  // -- Setup wizard (written once on first boot) ----------------------------
+  float    temp_shutdown_c    = 75.0f;
+  uint16_t temp_sleep_s       = 120;
   bool     setup_done         = false;
-  double   lat                = 24.9;   // fallback: Sylhet
+  double   lat                = 24.9;
   double   lon                = 91.9;
-  float    utc_offset         = 6.0f;   // hours ahead of UTC
+  float    utc_offset         = 6.0f;
   uint16_t deploy_days        = 30;
   uint16_t deploy_yr          = 2026;
   uint8_t  deploy_mo          = 6;
@@ -2249,7 +2214,6 @@ struct Config {
 };
 Config cfg;
 
-// ── Globals ─────────────────────────────────────────────────────────────────
 BH1750     lightMeter;
 RTC_DS3231 rtc;
 WebServer  server(80);
@@ -2277,18 +2241,14 @@ char     sunriseStr[6] = "--:--";
 char     sunsetStr[6]  = "--:--";
 char     nextImgStr[6] = "--:--";
 
-// ── LED status machine (NeoPixel / WS2812B) ──────────────────────────────────
 enum LedMode { LED_OFF, LED_SLOW_BLINK, LED_FAST_BLINK, LED_SOLID };
 static LedMode  ledMode       = LED_OFF;
 static uint32_t ledLastMs     = 0;
 static bool     ledState      = false;
-// Intervals (ms)
 #define LED_SLOW_ON_MS   900
 #define LED_SLOW_OFF_MS  100
 #define LED_FAST_ON_MS   80
 #define LED_FAST_OFF_MS  80
-
-// Current blink colour (set when mode changes)
 static uint8_t _ledR = 0, _ledG = 0, _ledB = 0;
 
 static void _ledShow(bool on) {
@@ -2299,7 +2259,7 @@ static void _ledShow(bool on) {
 
 void initStatusLed() {
   _ledStrip.begin();
-  _ledStrip.setBrightness(80);   // 0-255; 80 is visible without being blinding
+  _ledStrip.setBrightness(80);
   _ledStrip.clear();
   _ledStrip.show();
 }
@@ -2307,11 +2267,9 @@ void initStatusLed() {
 void setLedMode(LedMode m) {
   if (ledMode == m) return;
   ledMode = m;
-  // Pick colour for mode
-  if      (m == LED_SOLID)      { _ledR=0;   _ledG=0;   _ledB=180; }  // blue  — WiFi
-  else if (m == LED_FAST_BLINK) { _ledR=180; _ledG=0;   _ledB=0;   }  // red   — error
-  else if (m == LED_SLOW_BLINK) { _ledR=0;   _ledG=120; _ledB=0;   }  // green — logging
-  // Immediate output
+  if      (m == LED_SOLID)      { _ledR=0;   _ledG=0;   _ledB=180; }
+  else if (m == LED_FAST_BLINK) { _ledR=180; _ledG=0;   _ledB=0;   }
+  else if (m == LED_SLOW_BLINK) { _ledR=0;   _ledG=120; _ledB=0;   }
   if (m == LED_SOLID) { ledState = true;  _ledShow(true);  }
   else if (m == LED_OFF) { ledState = false; _ledShow(false); }
   ledLastMs = millis();
@@ -2330,7 +2288,6 @@ void tickLed() {
   }
 }
 
-// Update LED to reflect current system state (call each loop iteration)
 void updateLedState() {
   if (wifiActive)    { setLedMode(LED_SOLID);      return; }
   if (!rtcReady)     { setLedMode(LED_FAST_BLINK); return; }
@@ -2338,20 +2295,15 @@ void updateLedState() {
   setLedMode(LED_OFF);
 }
 
-// ── Thermal shutdown state ───────────────────────────────────────────────────
 static bool     inThermalSleep      = false;
 static uint32_t thermalSleepEndMs   = 0;
-static uint32_t thermalEventCount   = 0;  // resets each day
+static uint32_t thermalEventCount   = 0;
 static bool     thermalWifiWasOn    = false;
 static bool     thermalCamWasReady  = false;
-
-// ── Manual logging override (set via /api/override, cleared on reboot) ───────
-static bool     manualOverride      = false;  // forces isLogging regardless of sun schedule
-
-// ── NTP state ─────────────────────────────────────────────────────────────────
+static bool     manualOverride      = false;
 static bool     ntpSynced           = false;
 static uint32_t lastNtpAttemptMs    = 0;
-#define NTP_RETRY_MS  (10UL * 60UL * 1000UL)   // re-attempt every 10 min if unsynced
+#define NTP_RETRY_MS  (10UL * 60UL * 1000UL)
 
 struct Sample {
   uint32_t elapsed_s;
@@ -2367,14 +2319,14 @@ uint16_t liveHead     = 0;
 uint16_t liveCount    = 0;
 uint32_t totalSamples = 0;
 uint32_t rejectedCount = 0;
-Sample   writeBuf[50];    // max flush_count
+Sample   writeBuf[50];
 uint8_t  writeBufCount = 0;
 float    prevLux = -1.0f;
 double   dayIrrSum=0,dayIrrSumSq=0,dayTempSum=0;
 float    dayIrrPeak=0;
 uint32_t daySamples=0;
 
-// ── Forward declarations for all functions ───────────────────────────────────
+// ── Forward declarations ─────────────────────────────────────────────────────
 void loadConfig();
 void saveConfig();
 void getSunTimesForDate(int yr, int mo, int dy, int &srMin, int &ssMin);
@@ -2448,9 +2400,7 @@ void loadConfig() {
     return;
   }
   File f = FFat.open(CONFIG_FILE, "r");
-  if (!f) return;
-  String s = f.readString(); f.close();
-  // Simple JSON parse (no ArduinoJson dependency)
+  if (!f) return; String s = f.readString(); f.close();
   auto getInt = [&](const char *key, uint32_t def) -> uint32_t {
     String k = "\""; k += key; k += "\":";
     int idx = s.indexOf(k);
@@ -2523,7 +2473,7 @@ void saveConfig() {
   wlog("[CFG] Saved");
 }
 
-// ── Sunrise/sunset (NOAA calc, wraps calcSunTimes from Section 2) ───────────
+// ── Sunrise/sunset ───────────────────────────────────────────────────────────
 void getSunTimesForDate(int yr, int mo, int dy, int &srMin, int &ssMin) {
   calcSunTimes(yr, mo, dy, cfg.lat, cfg.lon, cfg.utc_offset, srMin, ssMin);
 }
@@ -2547,7 +2497,6 @@ void updateSunStrings() {
   snprintf(sunsetStr,  sizeof(sunsetStr),  "%02d:%02d", ssMin / 60, ssMin % 60);
 }
 
-// ── Watchdog ─────────────────────────────────────────────────────────────────
 void initWatchdog() {
   esp_task_wdt_config_t wdt_cfg = {
     .timeout_ms     = WDT_TIMEOUT_S * 1000,
@@ -2559,7 +2508,6 @@ void initWatchdog() {
   wlogf("[WDT] Armed — %ds\n", WDT_TIMEOUT_S);
 }
 
-// ── Temperature sensor ───────────────────────────────────────────────────────
 void initTempSensor() {
   temperature_sensor_config_t tc = TEMPERATURE_SENSOR_CONFIG_DEFAULT(10, 80);
   if (temperature_sensor_install(&tc, &tsens_handle) != ESP_OK) { tsens_handle=NULL; return; }
@@ -2572,7 +2520,6 @@ float readDieTemp() {
   float t=0; temperature_sensor_get_celsius(tsens_handle, &t); return t;
 }
 
-// ── Boot reason ─────────────────────────────────────────────────────────────
 void logBootReason() {
   esp_reset_reason_t r = esp_reset_reason();
   const char *s = "UNKNOWN";
@@ -2595,20 +2542,16 @@ void logBootReason() {
     wlog("[BOOT] *** Brownout detected — check power supply ***");
 }
 
-// ── NTP sync ─────────────────────────────────────────────────────────────────
-// Attempts SNTP sync and if successful pushes the time into DS3231.
-// Only meaningful when wifiActive and a client is connected (implies internet sharing).
 void tryNtpSync() {
   if (!wifiActive || !rtcReady) return;
   if (ntpSynced && (millis() - lastNtpAttemptMs < NTP_RETRY_MS)) return;
-  if (WiFi.softAPgetStationNum() == 0) return;  // no client, no uplink
+  if (WiFi.softAPgetStationNum() == 0) return;
   lastNtpAttemptMs = millis();
   configTime(0, 0, "pool.ntp.org", "time.google.com");
   struct tm ti;
   uint32_t deadline = millis() + 4000;
   while (millis() < deadline) {
     if (getLocalTime(&ti, 100)) {
-      // Adjust for configured UTC offset
       time_t epoch = mktime(&ti) + (time_t)(cfg.utc_offset * 3600.0f);
       struct tm *lt = gmtime(&epoch);
       DateTime dt(lt->tm_year+1900, lt->tm_mon+1, lt->tm_mday,
@@ -2638,32 +2581,24 @@ void writeThermalEvent(const char *dateStr, const char *timeStr, float tempC) {
 }
 
 // ── CSV tail repair ──────────────────────────────────────────────────────────
-// If the last write was interrupted (power loss mid-line) the final row may be
-// incomplete. This trims any partial line so the CSV stays parseable.
 void repairDayFileTail(const char *path) {
   File f = FFat.open(path, "r");
   if (!f) return;
   size_t sz = f.size();
   if (sz < 2) { f.close(); return; }
-  // Read last 128 bytes to find final newline
   size_t checkLen = (sz < 128) ? sz : 128;
   f.seek(sz - checkLen);
   char buf[130]; uint16_t n = 0;
   while (f.available() && n < checkLen) buf[n++] = (char)f.read();
   f.close();
   buf[n] = '\0';
-  // Find last newline
   int lastNl = -1;
   for (int i = n - 1; i >= 0; i--) {
     if (buf[i] == '\n') { lastNl = i; break; } 
   }
-  if (lastNl < 0) return;  // no newline at all — leave as-is
-  // If the file ends exactly on a newline, it's clean
+  if (lastNl < 0) return;
   if ((size_t)(sz - checkLen + lastNl + 1) == sz) return;
-  // Truncate to the last complete newline
   size_t trimTo = sz - checkLen + lastNl + 1;
-  // Rewrite: read good portion, write back
-  // ESP32 FFat has no truncate — rewrite via temp file
   char tmp[52]; snprintf(tmp, sizeof(tmp), "%s/_repair.tmp", DATA_DIR);
   File src = FFat.open(path, "r");
   File dst = FFat.open(tmp, "w");
@@ -2686,7 +2621,6 @@ void repairDayFileTail(const char *path) {
 
 // ── DS3231 ───────────────────────────────────────────────────────────────────
 void initRTC() {
-  // RTC shares Wire (GPIO45/46) with BH1750 — DS3231 addr 0x68, BH1750 addr 0x23
   if (!rtc.begin(&Wire)) {
     wlog("[RTC] DS3231 not found — check SDA->GPIO45 SCL->GPIO46");
     rtcReady = false; return;
@@ -2773,11 +2707,8 @@ bool isValidReading(float lux) {
 // in software with frame2jpg() before sending it as MJPEG. Frame rate is lower
 // (~3-5 fps at QQVGA) but there is zero risk of DMA corruption.
 
-// frame2jpg is declared in esp_camera.h for ESP-IDF but not always exposed
-// in Arduino — forward-declare it here so the linker can find it.
 extern "C" bool frame2jpg(camera_fb_t *fb, uint8_t quality, uint8_t **out, size_t *out_len);
 
-// Base pin wiring helper
 static void _camPins(camera_config_t &c) {
   c.ledc_channel  = LEDC_CHANNEL_0; c.ledc_timer = LEDC_TIMER_0;
   c.pin_d0=Y2_GPIO_NUM; c.pin_d1=Y3_GPIO_NUM; c.pin_d2=Y4_GPIO_NUM; c.pin_d3=Y5_GPIO_NUM;
@@ -2789,9 +2720,6 @@ static void _camPins(camera_config_t &c) {
   c.fb_location = CAMERA_FB_IN_PSRAM;
 }
 
-// Single init — RGB565 QQVGA, fb_count=1, GRAB_WHEN_EMPTY.
-// DMA stops when the single buffer is full; it restarts only after fb_return.
-// This is the only init called during normal operation (including setup()).
 bool initCamera(uint8_t quality, framesize_t fsize, pixformat_t fmt) {
   camera_config_t c; _camPins(c);
   c.xclk_freq_hz = 20000000;
@@ -2809,8 +2737,6 @@ bool initCamera(uint8_t quality, framesize_t fsize, pixformat_t fmt) {
   return true;
 }
 
-// captureAndSaveImage — v2.6: no deinit/reinit, no DMA mode switch.
-// Grabs one RGB565 frame and converts it to JPEG in PSRAM using frame2jpg().
 void captureAndSaveImage(const char *dateStr, const char *timeStr) {
   if (!cameraReady) { wlog("[IMG] Camera not ready — skip"); return; }
 
@@ -2820,11 +2746,10 @@ void captureAndSaveImage(const char *dateStr, const char *timeStr) {
     return;
   }
 
-  // Software JPEG encode — frame2jpg allocates output in PSRAM via heap_caps_malloc.
   uint8_t *jpgBuf = nullptr;
   size_t   jpgLen = 0;
   bool ok = frame2jpg(fb, cfg.jpeg_quality, &jpgBuf, &jpgLen);
-  esp_camera_fb_return(fb);   // return the DMA buffer immediately — DMA restarts
+  esp_camera_fb_return(fb);
 
   if (!ok || !jpgBuf || jpgLen == 0) {
     wlog("[IMG] frame2jpg failed");
@@ -2832,7 +2757,6 @@ void captureAndSaveImage(const char *dateStr, const char *timeStr) {
     return;
   }
 
-  // Build path and write
   char tNoColon[8];
   snprintf(tNoColon, sizeof(tNoColon), "%c%c%c%c%c%c",
     timeStr[0],timeStr[1],timeStr[3],timeStr[4],timeStr[6],timeStr[7]);
@@ -2853,7 +2777,6 @@ void captureAndSaveImage(const char *dateStr, const char *timeStr) {
     wlogf("[IMG] Cannot write %s\n", imgPath);
   }
   free(jpgBuf);
-  // cameraReady remains true — no reinit needed, DMA already running in RGB565
 }
 
 #define EXPECTED_FB_SIZE 38400UL   // QQVGA RGB565: 160×120×2
@@ -2862,19 +2785,15 @@ uint8_t captureBlueChannel() {
   camera_fb_t *fb = esp_camera_fb_get();
   if (!fb) return 0;
   if (fb->len != EXPECTED_FB_SIZE) {
-    // Unexpected frame size — sensor may have glitched; return frame but keep going
     esp_camera_fb_return(fb);
     wlogf("[CAM] Unexpected fb len %u (expected %lu)\n", (unsigned)fb->len, EXPECTED_FB_SIZE);
     return 0;
   }
-  // RGB565 little-endian packed: byte 0 = G[2:0]B[4:0], byte 1 = R[4:0]G[5:3]
-  // Blue 5-bit field is the low 5 bits of byte 0 (even bytes at stride 2)
   uint32_t blueSum = 0;
   uint32_t samples = 0;
-  // Sample every 16th pixel (every 32nd byte) — fast, representative
   for (uint32_t i = 0; i < fb->len; i += 32) {
     uint8_t b5 = fb->buf[i] & 0x1F;
-    blueSum += (b5 << 3) | (b5 >> 2);   // scale 5-bit → 8-bit
+    blueSum += (b5 << 3) | (b5 >> 2);
     samples++;
   }
   uint8_t mb = (samples > 0) ? (uint8_t)(blueSum / samples) : 0;
@@ -2882,7 +2801,7 @@ uint8_t captureBlueChannel() {
   return mb;
 }
 
-// ── LittleFS ─────────────────────────────────────────────────────────────────
+// ── FFat ─────────────────────────────────────────────────────────────────────
 void ensureDirs() {
   if(!FFat.exists(DATA_DIR)) FFat.mkdir(DATA_DIR);
   if(!FFat.exists(IMGS_DIR)) FFat.mkdir(IMGS_DIR);
@@ -2895,7 +2814,6 @@ void openDayFile(const char *dateStr) {
     File f=FFat.open(currentFile,"w");
     if(f){f.println("date,time,elapsed_s,lux,irradiance_wm2,blue_channel,temp_c");f.close();}
   } else {
-    // File exists (continuing after reboot mid-day) — repair any truncated tail
     repairDayFileTail(currentFile);
   }
   wlogf("[FS] Day file: %s\n",currentFile);
@@ -2977,8 +2895,8 @@ void startWiFi() {
   if(MDNS.begin(MDNS_HOSTNAME)) MDNS.addService("http","tcp",80);
   server.begin();
   wifiActive=true;
-  lastClientMs=millis();       // reset the no-client timer on every start
-  wifiHadClient=false;         // no client yet this session
+  lastClientMs=millis();
+  wifiHadClient=false;
   wlogf("[WiFi] AP: %s  192.168.4.1\n",AP_SSID);
 }
 
@@ -2992,8 +2910,8 @@ void stopWiFi() {
 
 void checkBtn(uint8_t pin, uint8_t &prevState, uint32_t &pressMs, bool &fired) {
   uint8_t s=digitalRead(pin);
-  if(s==HIGH){ prevState=HIGH; fired=false; return; }  // released — reset latch
-  if(prevState==HIGH) pressMs=millis();                 // falling edge — start timer
+  if(s==HIGH){ prevState=HIGH; fired=false; return; }
+  if(prevState==HIGH) pressMs=millis();
   prevState=LOW;
   if(!fired && (millis()-pressMs>=WIFI_BTN_HOLD_MS)){
     fired=true;
@@ -3009,11 +2927,9 @@ void handleWiFiButtons() {
       lastClientMs=millis();
       if(!wifiHadClient) {
         wifiHadClient=true;
-        // First client connection — try NTP sync (client may have internet sharing)
         tryNtpSync();
       }
     } else if(wifiHadClient && millis()-lastClientMs>(uint32_t)cfg.wifi_autooff_min*60000UL){
-      // Only auto-off after a client has connected and then left
       wlog("[WiFi] Auto-off"); stopWiFi();
     }
   }
@@ -3026,32 +2942,17 @@ void handleWebServer() {
   webLoggerLoop();
 }
 
-// ── Guardian NVS helpers — REMOVED (OTA now embedded) ───────────────────────
-
 // ── Camera stream / snapshot ─────────────────────────────────────────────────
-// MJPEG multipart stream — browser keeps connection open, we push frames.
-// We reinit to JPEG for streaming, restore RGB565 after stop/error.
-
-// ── Camera stream / snapshot ─────────────────────────────────────────────────
-// v2.6: no deinit/reinit. Stream and snapshot grab an RGB565 frame and
-// compress it in software using frame2jpg(). The DMA channel stays in its
-// single, always-on RGB565 state. There is no mode switch, no GDMA corruption.
 
 static bool     camStreamActive = false;
 static uint32_t camStreamFrames = 0;
 static uint32_t camStreamStartMs = 0;
 static float    camStreamFps     = 0.0f;
 
-// No-op stubs kept for API compatibility with any future callers.
-// v2.6 never needs to enter JPEG mode or restore RGB565 — it never leaves.
 static bool camEnterJpeg(uint8_t /*quality*/ = 10, framesize_t /*size*/ = FRAMESIZE_QVGA) {
-  // Nothing to do — camera is already in RGB565 mode and stays there.
-  // Returns true if the camera is ready.
   return cameraReady;
 }
-static void camRestoreRgb() {
-  // Nothing to do — camera was never taken out of RGB565 mode.
-}
+static void camRestoreRgb() {}
 
 void handleCamSnapshot() {
   if (camStreamActive) {
@@ -3114,11 +3015,10 @@ void handleCamStream() {
     camera_fb_t *fb = esp_camera_fb_get();
     if (!fb) { delay(20); continue; }
 
-    // Software-compress RGB565 → JPEG (quality=12 for stream)
     uint8_t *jpgBuf = nullptr;
     size_t   jpgLen = 0;
     bool ok = frame2jpg(fb, 12, &jpgBuf, &jpgLen);
-    esp_camera_fb_return(fb);   // return DMA buffer immediately
+    esp_camera_fb_return(fb);
 
     if (!ok || !jpgBuf) {
       if (jpgBuf) free(jpgBuf);
@@ -3149,7 +3049,6 @@ void handleCamStream() {
   wlogf("[CAM] MJPEG stream end — %lu frames, %.1f fps avg\n",
     camStreamFrames,
     camStreamFrames * 1000.0f / max(1UL, millis() - camStreamStartMs));
-  // No camRestoreRgb() needed — camera never left RGB565 mode
 }
 
 void handleCamStats() {
@@ -3163,10 +3062,6 @@ void handleCamStats() {
   server.sendHeader("Access-Control-Allow-Origin","*");
   server.send(200,"application/json",buf);
 }
-
-// ── OTA — embedded firmware update ───────────────────────────────────────────
-// /ota          GET  → upload page (drag & drop .bin)
-// /api/ota-upload POST → receives multipart .bin, flashes, reboots
 
 static bool   otaInProgress = false;
 static size_t otaWritten    = 0;
@@ -3309,7 +3204,6 @@ void handleOtaUpload() {
     otaTotal    = 0;
     otaInProgress = true;
     wlogf("[OTA] Start: %s  size=%u\n", upload.filename.c_str(), upload.totalSize);
-    // Disable watchdog during flash
     esp_task_wdt_delete(NULL);
     if (!Update.begin(UPDATE_SIZE_UNKNOWN)) {
       wlogf("[OTA] begin() failed: %s\n", Update.errorString());
@@ -3459,7 +3353,6 @@ void handleFiles() {
       if(!f.isDirectory()){
         const char *nm = (char*)f.name();
         char fp[64]; snprintf(fp,sizeof(fp),"%s/%s",DATA_DIR,nm);
-        // Determine file type for client UI
         const char *ext = strrchr(nm, '.');
         bool isCsv   = ext && strcmp(ext,".csv")==0;
         bool isMeta  = ext && strcmp(ext,".meta")==0;
@@ -3646,11 +3539,9 @@ void handleSetupPost() {
 }
 
 void handleOverride() {
-  // GET /api/override?on=1  or  ?on=0
   if (server.hasArg("on")) {
     manualOverride = (server.arg("on") == "1");
     wlogf("[OVERRIDE] Manual logging override: %s\n", manualOverride ? "ON" : "OFF");
-    // If override just turned on and we're not logging, kick off immediately
     if (manualOverride && !isLogging) {
       isLogging = true; dayStartMs = millis();
       nightCount = 0; liveCount = 0; liveHead = 0; writeBufCount = 0;
@@ -3661,7 +3552,6 @@ void handleOverride() {
       updateSunStrings();
       wlogf("[LOG] Day START (manual override) %s %s\n", ds, ts);
     }
-    // If override turned off and sun is down, stop logging
     if (!manualOverride && isLogging && !isDaytime()) {
       flushWriteBuffer(true);
       uint32_t dur = (millis() - dayStartMs) / 1000UL;
@@ -3714,8 +3604,6 @@ void setup() {
   if(tl<0) wlog("[BH1750] Warning: check SDA->GPIO45 SCL->GPIO46");
   else      wlogf("[BH1750] Ready — %.1f lux\n",tl);
 
-  // Camera init BEFORE RTC — camera SCCB uses I2C port 1 internally.
-  // RTC now shares Wire (GPIO45/46) so there is no bus conflict.
   if(initCamera(12,FRAMESIZE_QQVGA,PIXFORMAT_RGB565)){
     sensor_t *s=esp_camera_sensor_get();
     if(s){s->set_whitebal(s,1);s->set_awb_gain(s,1);s->set_exposure_ctrl(s,1);s->set_aec2(s,1);}
@@ -3780,7 +3668,6 @@ void setup() {
     }
   });
 
-  // Start WiFi AP immediately on boot so dashboard is reachable without button press
   startWiFi();
 
   char ds[12],ts[10]; getRTCStrings(ds,ts);
@@ -3798,11 +3685,9 @@ void loop() {
 
   uint32_t now=millis();
 
-  // ── Thermal protection ────────────────────────────────────────────────────
   if (cfg.temp_shutdown_c > 0.0f) {
     float dieT = readDieTemp();
     if (inThermalSleep) {
-      // Hysteresis: only exit cooldown once temp drops 10°C below threshold
       float resumeThresh = cfg.temp_shutdown_c - 10.0f;
       bool timerDone = (now >= thermalSleepEndMs);
       bool coolEnough = (dieT <= resumeThresh);
@@ -3810,7 +3695,6 @@ void loop() {
         inThermalSleep = false;
         wlogf("[THERM] Cooldown complete — %.1f°C (resume at <=%.1f°C)\n",
               dieT, resumeThresh);
-        // Restore camera if it was running before thermal event
         if (thermalCamWasReady) {
           if (initCamera(12, FRAMESIZE_QQVGA, PIXFORMAT_RGB565)) {
             sensor_t *s = esp_camera_sensor_get();
@@ -3822,10 +3706,8 @@ void loop() {
             wlog("[THERM] Camera restore failed — continuing without");
           }
         }
-        // Restore WiFi if it was on before thermal event
         if (thermalWifiWasOn) { startWiFi(); thermalWifiWasOn = false; }
       } else {
-        // Still in cooldown — keep WDT fed, fast-blink, light sleep
         esp_task_wdt_reset();
         tickLed(); setLedMode(LED_FAST_BLINK);
         uint32_t remaining = timerDone ? 500 : (thermalSleepEndMs - now);
@@ -3835,17 +3717,14 @@ void loop() {
         return;
       }
     } else if (dieT >= cfg.temp_shutdown_c) {
-      // Threshold crossed — flush buffers, power down camera & WiFi, enter cooldown
       char ds[12], ts[10]; getRTCStrings(ds, ts);
       wlogf("[THERM] Die temp %.1f°C >= %.1f°C — cooling down for %us\n",
             dieT, cfg.temp_shutdown_c, cfg.temp_sleep_s);
       flushWriteBuffer(true);
       writeThermalEvent(ds, ts, dieT);
       thermalEventCount++;
-      // Power down camera to reduce heat
       thermalCamWasReady = cameraReady;
       if (cameraReady) { esp_camera_deinit(); cameraReady = false; wlog("[THERM] Camera powered down"); }
-      // Stop WiFi to reduce current draw
       thermalWifiWasOn = wifiActive;
       if (wifiActive) { stopWiFi(); wlog("[THERM] WiFi stopped for cooldown"); }
       inThermalSleep    = true;
@@ -3883,10 +3762,6 @@ void loop() {
   } else if(isLogging && daytime) {
     nightCount=0;
   }
-
-  // v2.6: No DMA mode switching → no tick-level guard needed.
-  // captureBlueChannel() and captureAndSaveImage() can safely run in the
-  // same loop() pass — both operate on the same always-on RGB565 DMA channel.
 
   if(now-lastSampleMs >= cfg.sample_interval_s*1000UL) {
     lastSampleMs=now;
