@@ -1,88 +1,52 @@
 /**
  * ╔══════════════════════════════════════════════════════════════════════╗
- * ║  HELIOS DATA LOGGER  —  v2.6  (single-file build)                   ║
+ * ║  HELIOS DATA LOGGER  (single-file build)                            ║
  * ║  ESP32-S3 N16R8 WROOM · GY-302 (BH1750) · OV2640 · DS3231         ║
  * ║                                                                      ║
- * ║  NEW IN v2.6  — PERMANENT FIX for FB-OVF / gdma_disconnect          ║
+ * ║  CAMERA STRATEGY                                                    ║
+ * ║  The esp32-camera library's esp_camera_deinit() does not call      ║
+ * ║  gdma_stop() before gdma_disconnect(), so any DMA transaction      ║
+ * ║  in flight leaves the channel in an undefined state and the        ║
+ * ║  subsequent esp_camera_init() inherits that corrupt state           ║
+ * ║  (FB-OVF / gdma_disconnect on cleanup). The fix is structural:     ║
+ * ║  ELIMINATE all deinit/reinit cycles. The camera is initialised     ║
+ * ║  ONCE in RGB565 / GRAB_WHEN_EMPTY (fb_count=1) and never           ║
+ * ║  reinitialised. JPEG images are produced by calling frame2jpg()    ║
+ * ║  on a raw RGB565 frame — the same encoder the driver uses          ║
+ * ║  internally. Quality and size are unchanged (96x96, configurable    ║
+ * ║  quality). Camera stream/snapshot handlers use the same path.      ║
  * ║                                                                      ║
- * ║  Root cause (definitive): every previous fix attempted to make the  ║
- * ║  deinit/reinit cycle between RGB565 and JPEG modes safe. This is    ║
- * ║  impossible without patching the esp32-camera library itself.        ║
- * ║  esp_camera_deinit() calls gdma_disconnect() on the camera's DMA   ║
- * ║  channel, but does NOT call gdma_stop() first. If any DMA           ║
- * ║  transaction is in flight (even partially), the channel is left in  ║
- * ║  an undefined hardware state. esp_camera_init() then calls          ║
- * ║  gdma_connect() on the same channel without a reset, so the new    ║
- * ║  mode inherits the corrupt state → FB-OVF → gdma_disconnect on    ║
- * ║  cleanup. Draining frames and adding delays cannot fix this because ║
- * ║  the DMA hardware (not software) is broken.                         ║
+ * ║  THERMAL PROTECTION                                                 ║
+ * ║  Configurable shutdown temp (default 75 deg C). When die temp       ║
+ * ║  exceeds the threshold, Helios flushes buffers and enters light    ║
+ * ║  sleep for a configurable cooldown (default 120 s). Disabled       ║
+ * ║  by setting threshold to 0. Resumes only when temp drops 10 C      ║
+ * ║  below threshold (hysteresis). Adjustable via Settings page.       ║
  * ║                                                                      ║
- * ║  Fix strategy: ELIMINATE ALL DEINIT/REINIT CYCLES.                  ║
- * ║  The camera is initialised ONCE in RGB565/GRAB_WHEN_EMPTY mode      ║
- * ║  (fb_count=1) and never reinitialized. JPEG images are produced by  ║
- * ║  calling frame2jpg() on a raw RGB565 frame — the esp32-camera       ║
- * ║  library ships this function and it is exactly what the internal    ║
- * ║  JPEG encoder uses. Quality and size are unchanged (96×96, q=5).    ║
- * ║  The camera stream/snapshot handlers are updated similarly.         ║
- * ║  The didSample/didCapture tick-guard and all drain loops are        ║
- * ║  removed — they were workarounds for a problem that no longer       ║
- * ║  exists.                                                             ║
+ * ║  STATUS LED (GPIO 48 — WS2812B NeoPixel)                            ║
+ * ║  Solid Blue        — WiFi AP active                                 ║
+ * ║  Slow blink Green  — logging active (daytime)                       ║
+ * ║  Fast blink Red    — error / thermal cooldown                        ║
+ * ║  Off               — night / idle                                    ║
  * ║                                                                      ║
- * ║  NEW IN v2.5                                                         ║
- * ║  · Fix: FB-OVF / gdma_disconnect still firing after v2.4.           ║
- * ║    Root cause 1: restore path at end of captureAndSaveImage() had   ║
- * ║    the identical single-frame drain problem as the entry path.       ║
- * ║  · Root cause 2: didSample guard was one-directional.               ║
+ * ║  EMBEDDED OTA                                                       ║
+ * ║  /ota page: drag-and-drop .bin upload with progress bar             ║
+ * ║  POST /api/ota-upload: streams .bin via Update library, reboots    ║
  * ║                                                                      ║
- * ║  NEW IN v2.4                                                         ║
- * ║  · Fix: single-frame drain + 80 ms delay was insufficient.          ║
+ * ║  SKY IMAGES                                                         ║
+ * ║  JPEG 96x96 every 3 min (configurable), stored in /imgs/            ║
+ * ║  Download all images as a .zip via /api/images-zip or the          ║
+ * ║  dashboard "Download ZIP" button.                                   ║
  * ║                                                                      ║
- * ║  NEW IN v2.3                                                         ║
- * ║  · Fix: FB-OVF / gdma_disconnect on image capture                   ║
- * ║  · Fix: drain settle delay 50 ms → 80 ms                            ║
+ * ║  SETTINGS PAGE (/settings)                                          ║
+ * ║  All parameters adjustable, saved to /data/config.json,             ║
+ * ║  loaded on every boot.                                              ║
  * ║                                                                      ║
- * ║  NEW IN v2.2                                                         ║
- * ║  · WDT reset inside thermal cooldown loop (prevents panic reboot)   ║
- * ║  · Boot reason logged on startup (WDT / brownout / thermal / etc.)  ║
- * ║  · Thermal event counter — persisted in daily summary CSV           ║
- * ║  · Per-day thermal log  /data/YYYY-MM-DD.therm  (timestamp+temp)   ║
- * ║  · Thermal hysteresis — resumes only when temp drops 10°C below     ║
- * ║    threshold, preventing rapid re-trigger in hot ambient            ║
- * ║  · WiFi auto-off on thermal trigger, restart after cooldown         ║
- * ║  · Camera powered down during thermal sleep, reinit after           ║
- * ║  · Brownout guard — skips flash write if reset reason was brownout  ║
- * ║  · NTP sync attempt when WiFi AP has a connected client             ║
- * ║  · CSV integrity check on openDayFile — trims truncated last line   ║
- * ║                                                                      ║
- * ║  NEW IN v2.1                                                         ║
- * ║  · Thermal protection — configurable shutdown temp (default 75°C)   ║
- * ║    When die temp exceeds threshold, flushes buffers and enters       ║
- * ║    light sleep for configurable cooldown (default 120 s). Disabled  ║
- * ║    by setting threshold to 0. Adjustable via Settings page.         ║
- * ║  · Status LED on GPIO 48 (built-in LED on ESP32-S3 WROOM)          ║
- * ║    Slow blink (1 s)  — logging active                               ║
- * ║    Fast blink (160ms) — error / thermal cooldown                    ║
- * ║    Solid on           — WiFi AP active                              ║
- * ║    Off                — night / idle                                ║
- * ║  · Bug fix: getChipTempC() → readDieTemp() in handleStatus()        ║
- * ║                                                                      ║
- * ║  NEW IN v2.0                                                         ║
- * ║  · Partition changed to 2MB APP / 12.5MB FATFS (16MB flash)         ║
- * ║    Use custom partition table: helios_16mb_2app_12fat.csv           ║
- * ║                                                                      ║
- * ║  NEW IN v1.9                                                         ║
- * ║  · Embedded OTA — no Guardian required                              ║
- * ║    /ota page: drag-and-drop .bin upload with progress bar           ║
- * ║    POST /api/ota-upload: streams .bin via Update library, reboots   ║
- * ║                                                                      ║
- * ║  FROM v1.5                                                           ║
- * ║  · Sky images — JPEG 96x96 every 3 min, stored in /imgs/            ║
- * ║  · Settings page (/settings) — all params adjustable, saved to      ║
- * ║    /data/config.json, loaded on boot                                 ║
- * ║  · GPIO 3 second AP button — wire external pushbutton               ║
- * ║  · Light mode dashboard — high contrast for outdoor use             ║
+ * ║  GPIO 3 second AP button — wire external pushbutton                 ║
+ * ║  Light-mode dashboard — high contrast for outdoor use               ║
  * ║                                                                      ║
  * ║  PARTITION: 16M Flash (2MB APP / 12.5MB FATFS)  ← REQUIRED         ║
+ * ║  Use custom partition table: helios_16mb_2app_12fat.csv             ║
  * ║                                                                      ║
  * ║  CSV FORMAT  (/data/YYYY-MM-DD.csv)                                 ║
  * ║  date,time,elapsed_s,lux,irradiance_wm2,blue_channel,temp_c        ║
@@ -91,28 +55,6 @@
  * ║                                                                      ║
  * ║  Hussain Touhid Siddiquee · Leading University Sylhet · 2026        ║
  * ╚══════════════════════════════════════════════════════════════════════╝
- *
- * WIRING
- * ──────
- * GY-302   SDA → GPIO 45   SCL → GPIO 46   VCC → 3.3V   GND → GND
- * DS3231   SDA → GPIO 1    SCL → GPIO 2    VCC → 3.3V   GND → GND
- * OV2640   XCLK→15 SDA→4 SCL→5 D0→11 D1→9 D2→8 D3→10
- *          D4→12 D5→18 D6→17 D7→16 VSYNC→6 HREF→7 PCLK→13
- * AP BTN 1 → GPIO 0  (BOOT button, built-in)
- * AP BTN 2 → GPIO 3  (external button, other leg to GND)
- *
- * LIBRARIES
- * ─────────
- * · RTClib by Adafruit
- * · BH1750 by Christopher Laws
- *
- * ARDUINO IDE SETTINGS
- * ─────────────────────
- * Board            : ESP32S3 Dev Module
- * Flash Size       : 16MB
- * Partition Scheme : Custom (16M Flash: 2MB APP / 12.5MB FATFS)  ← IMPORTANT
- * PSRAM            : OPI PSRAM
- * Upload Speed     : 921600
  */
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -140,6 +82,12 @@
 #include <pgmspace.h>
 #include <cstdarg>
 #include <Adafruit_NeoPixel.h>   // GPIO 48 on ESP32-S3 WROOM is WS2812B RGB, not plain GPIO
+// GPIO 48 on the ESP32-S3 WROOM is a WS2812B RGB LED, not a plain GPIO.
+// Hardcoded pin/count here so the static object can be constructed before
+// the SECTION 5 #defines are evaluated.  Keep in sync with STATUS_LED_PIN
+// and STATUS_LED_COUNT in SECTION 5.
+static Adafruit_NeoPixel _ledStrip(1, 48, NEO_GRB + NEO_KHZ800);
+
 
 // ═══════════════════════════════════════════════════════════════════════════
 //  SECTION 1 — CAMERA PINS (ESP32-S3 N16R8 WROOM)
@@ -860,7 +808,7 @@ footer{text-align:center;font-size:12px;color:var(--text-muted);font-family:var(
     <div class="logo-icon">&#9728;</div>
     <div>
       <div class="logo-text">HELIOS</div>
-      <div class="logo-sub">Data Logger v2.0</div>
+      <div class="logo-sub">Data Logger</div>
     </div>
   </div>
   <div class="header-right">
@@ -1055,7 +1003,10 @@ footer{text-align:center;font-size:12px;color:var(--text-muted);font-family:var(
 <div class="files-card">
   <div class="files-header">
     <div class="files-title">Latest Images (96&times;96 JPEG)</div>
-    <span id="imgTotalSize" style="font-family:var(--mono);font-size:12px;color:var(--text-muted);font-weight:700"></span>
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+      <span id="imgTotalSize" style="font-family:var(--mono);font-size:12px;color:var(--text-muted);font-weight:700"></span>
+      <button class="btn btn-teal btn-sm" id="zipBtn" onclick="downloadImagesZip()">&#128230; Download ZIP</button>
+    </div>
   </div>
   <div id="imgGrid" style="padding:16px">
     <div class="files-empty">No images yet.</div>
@@ -1374,6 +1325,41 @@ async function fetchImages(){
   }catch(e){}
 }
 
+// Download all sky images as a single .zip archive.
+// Server caps the archive at 1000 images; if more are present, only the first
+// 1000 are included. Check the serial log for a truncation warning.
+async function downloadImagesZip(){
+  const btn=document.getElementById('zipBtn');
+  if(btn){btn.disabled=true;btn.textContent='Zipping...';}
+  try{
+    const r=await fetch('/api/images-zip');
+    if(!r.ok){
+      const msg=await r.text();
+      toast('ZIP failed: '+(msg||r.status),'error');
+      return;
+    }
+    const blob=await r.blob();
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    a.href=url;
+    const d=new Date();
+    const pad=n=>String(n).padStart(2,'0');
+    a.download='helios-images-'+d.getFullYear()+pad(d.getMonth()+1)+pad(d.getDate())+'-'+pad(d.getHours())+pad(d.getMinutes())+'.zip';
+    document.body.appendChild(a);a.click();a.remove();
+    URL.revokeObjectURL(url);
+    // Hint the user about the 1000-image cap (server logs a warning when hit).
+    if(blob.size > 0){
+      toast('ZIP downloaded. (Archive capped at 1000 images — see serial log if some were skipped.)','ok');
+    } else {
+      toast('ZIP downloaded','ok');
+    }
+  }catch(e){
+    toast('Network error during ZIP','error');
+  }finally{
+    if(btn){btn.disabled=false;btn.textContent='\u{1F4E6} Download ZIP';}
+  }
+}
+
 async function deleteFile(name){
   if(!confirm('Delete '+name+'?'))return;
   try{
@@ -1633,7 +1619,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:1
       <div class="logo-icon">&#9728;</div>
       <div>
         <h1>HELIOS SETUP</h1>
-        <p>Data Logger v1.6 &mdash; First Boot Configuration</p>
+        <p>Data Logger &mdash; First Boot Configuration</p>
       </div>
     </div>
   </div>
@@ -2377,6 +2363,7 @@ void handleLive();
 void handleFiles();
 void handleImages();
 void handleImg();
+void handleImagesZip();  // GET /api/images-zip — stream all images as a .zip
 void handleDownload();
 void handleDelete();
 void handleDeleteAll();
@@ -2641,7 +2628,7 @@ void getRTCStrings(char *dateOut, char *timeOut) {
 
 // ── BH1750 ───────────────────────────────────────────────────────────────────
 void configureBH1750() {
-  lightMeter.begin(BH1750::CONTINUOUS_HIGH_RES_MODE, BH1750_ADDR, &Wire);
+  lightMeter.begin(BH1750::CONTINUOUS_LOW_RES_MODE,  BH1750_ADDR, &Wire);  // high range, low sensitivity (4 lux res, ~16 ms)
 }
 
 uint8_t i2cFails = 0;
@@ -2659,7 +2646,7 @@ void recoverI2CBus() {
   digitalWrite(BH1750_SCL,HIGH);delayMicroseconds(5);
   digitalWrite(BH1750_SDA,HIGH);delayMicroseconds(5);
   Wire.begin(BH1750_SDA,BH1750_SCL);
-  lightMeter.begin(BH1750::CONTINUOUS_HIGH_RES_MODE,BH1750_ADDR,&Wire);
+  lightMeter.begin(BH1750::CONTINUOUS_LOW_RES_MODE, BH1750_ADDR,&Wire);  // high range, low sensitivity
   delay(200);
   wlog("[I2C] Bus recovered");
 }
@@ -2674,15 +2661,26 @@ bool readBH1750(float &lux) {
   i2cFails=0; lux=r; return true;
 }
 
+// BH1750 in CONTINUOUS_LOW_RES_MODE returns values up to 54612 lux.  Direct
+// sunlight on the bare sensor can saturate near that ceiling.  Any prevLux
+// above this ceiling is treated as "saturated" — the next reading is always
+// accepted (saturated baselines would otherwise reject every subsequent
+// lower reading as an outlier, starving the day's accumulator).
+#define LUX_SATURATION_CEILING 54000.0f
+
 bool isValidReading(float lux) {
   if(prevLux<0||prevLux<1) return true;
+  // If the previous reading was saturated (or absurdly high), accept the new
+  // one unconditionally and let prevLux update to the new (presumably lower)
+  // value.  This prevents a single spike from poisoning the baseline.
+  if(prevLux>=LUX_SATURATION_CEILING) return true;
   if(lux>prevLux*cfg.outlier_factor) return false;
   if(lux<prevLux/cfg.outlier_factor) return false;
   return true;
 }
 
 // ── Camera ───────────────────────────────────────────────────────────────────
-// ── v2.6 design: ONE init, ZERO deinit/reinit cycles ─────────────────────────
+// ── Design: ONE init, ZERO deinit/reinit cycles ──────────────────────────────
 //
 // The GDMA corruption (FB-OVF / gdma_disconnect) is caused by the esp32-camera
 // library's esp_camera_deinit() not calling gdma_stop() before gdma_disconnect().
@@ -2769,10 +2767,18 @@ void captureAndSaveImage(const char *dateStr, const char *timeStr) {
 
   File f = FFat.open(imgPath, "w");
   if (f) {
-    f.write(jpgBuf, jpgLen);
+    size_t wrote = f.write(jpgBuf, jpgLen);
     f.close();
-    imgCountToday++;
-    wlogf("[IMG] Saved %s (%u bytes)\n", imgPath, (unsigned)jpgLen);
+    if (wrote == jpgLen) {
+      imgCountToday++;
+      wlogf("[IMG] Saved %s (%u bytes)\n", imgPath, (unsigned)jpgLen);
+    } else {
+      // Partial write — disk full or flash failure.  Remove the corrupt
+      // file so it doesn't show up as a half-length JPEG in the gallery.
+      FFat.remove(imgPath);
+      wlogf("[IMG] Short write on %s (%u/%u bytes) — removed, disk full?\n",
+            imgPath, (unsigned)wrote, (unsigned)jpgLen);
+    }
   } else {
     wlogf("[IMG] Cannot write %s\n", imgPath);
   }
@@ -2822,15 +2828,47 @@ void openDayFile(const char *dateStr) {
 void flushWriteBuffer(bool force) {
   if(!writeBufCount||(writeBufCount<cfg.flush_count&&!force)) return;
   File f=FFat.open(currentFile,"a");
-  if(!f){wlog("[FS] Flush failed");return;}
+  if(!f){wlog("[FS] Flush failed (open) — keeping buffer");return;}
+  // Check free space BEFORE writing — if the filesystem is essentially full,
+  // printf will silently truncate and we'll lose samples without warning.
+  size_t total=FFat.totalBytes(), used=FFat.usedBytes();
+  if(total && (total-used) < (size_t)writeBufCount*80){
+    f.close();
+    wlogf("[FS] Flush aborted — only %u KB free, need ~%u KB for %u samples\n",
+          (unsigned)((total-used)/1024),
+          (unsigned)((writeBufCount*80)/1024+1),
+          writeBufCount);
+    // Don't reset writeBufCount — keep the data in RAM so it can be flushed
+    // after the operator deletes old files.  If RAM fills first (50-sample
+    // cap), bufferSample() will keep calling this; the loop will eventually
+    // log the abort every flush_count samples.
+    return;
+  }
+  uint8_t written=0;
   for(uint8_t i=0;i<writeBufCount;i++){
-    f.printf("%s,%s,%lu,%.2f,%.4f,%u,%.2f\n",
+    size_t n=f.printf("%s,%s,%lu,%.2f,%.4f,%u,%.2f\n",
       writeBuf[i].date,writeBuf[i].time,writeBuf[i].elapsed_s,
       writeBuf[i].lux,writeBuf[i].irradiance_wm2,writeBuf[i].blue_channel,writeBuf[i].temp_c);
+    if(n==0){
+      // printf returned 0 — write failed (disk full, etc.).  Stop writing
+      // and KEEP the unwritten samples in the buffer for the next attempt.
+      wlogf("[FS] Write failed at sample %u/%u (disk full?) — keeping remaining %u samples\n",
+            i, writeBufCount, (uint8_t)(writeBufCount-i));
+      break;
+    }
+    written++;
   }
   f.close();
-  wlogf("[FS] Flushed %u samples\n",writeBufCount);
-  writeBufCount=0;
+  if(written>0) wlogf("[FS] Flushed %u/%u samples\n",written,writeBufCount);
+  // Shift any unwritten samples to the front of the buffer.
+  if(written<writeBufCount){
+    uint8_t remaining=(uint8_t)(writeBufCount-written);
+    for(uint8_t i=0;i<remaining;i++)
+      writeBuf[i]=writeBuf[i+written];
+    writeBufCount=remaining;
+  } else {
+    writeBufCount=0;
+  }
 }
 
 void bufferSample(const Sample &s) {
@@ -3341,6 +3379,232 @@ void handleLive() {
   server.sendContent("]");
 }
 
+
+// ── ZIP archive support ─────────────────────────────────────────────────────
+//
+// Minimal ZIP "store" (no compression) implementation.  Each file in /imgs/
+// is read twice: once to compute CRC32 + size, then again to stream the
+// bytes out as the local-file-data segment.  The central directory is built
+// after all local headers have been sent.
+//
+// Layout produced:
+//   [Local File Header 1][file 1 bytes]
+//   [Local File Header 2][file 2 bytes]
+//   ...
+//   [Central Directory Header 1][Central Directory Header 2]...
+//   [End Of Central Directory Record]
+//
+// All multi-byte fields are little-endian (ZIP spec).
+
+// Lazy-init CRC-32 table (poly 0xEDB88320).  Returns the table so callers
+// can use it directly without re-initialising.
+static const uint32_t * _zipCRC32Table() {
+  static uint32_t table[256];
+  static bool initialised = false;
+  if (!initialised) {
+    for (uint32_t i = 0; i < 256; i++) {
+      uint32_t c = i;
+      for (int k = 0; k < 8; k++)
+        c = (c & 1u) ? (0xEDB88320u ^ (c >> 1)) : (c >> 1);
+      table[i] = c;
+    }
+    initialised = true;
+  }
+  return table;
+}
+
+// Continue a CRC-32 over one chunk.  Pass *crc = 0xFFFFFFFF on the first
+// chunk; flip the final value with `crc ^ 0xFFFFFFFF` when done.
+static inline void _zipCRC32Update(uint32_t &crc, const uint8_t *data, size_t len) {
+  const uint32_t *table = _zipCRC32Table();
+  for (size_t i = 0; i < len; i++)
+    crc = table[(crc ^ data[i]) & 0xFFu] ^ (crc >> 8);
+}
+
+// Pack a little-endian uint16/uint32 into a byte buffer.
+static inline void _putU16(uint8_t *p, uint16_t v) { p[0]=v&0xFF; p[1]=(v>>8)&0xFF; }
+static inline void _putU32(uint8_t *p, uint32_t v) {
+  p[0]=v&0xFF; p[1]=(v>>8)&0xFF; p[2]=(v>>16)&0xFF; p[3]=(v>>24)&0xFF;
+}
+
+// Compute CRC32 + size of an open file.  Rewinds the file to position 0
+// before returning so the caller can immediately re-stream the bytes.
+static void _zipHashFile(File &f, uint32_t &crcOut, uint32_t &sizeOut) {
+  uint8_t buf[1024];
+  uint32_t crc  = 0xFFFFFFFFu;
+  uint32_t size = 0;
+  f.seek(0);
+  size_t n;
+  while ((n = f.read(buf, sizeof(buf))) > 0) {
+    _zipCRC32Update(crc, buf, n);
+    size += n;
+  }
+  f.seek(0);
+  crcOut  = crc ^ 0xFFFFFFFFu;
+  sizeOut = size;
+}
+
+void handleImagesZip() {
+  // Collect the list of files first (we need two passes: hash + stream).
+  File root = FFat.open(IMGS_DIR);
+  if (!root || !root.isDirectory()) {
+    server.send(404, "text/plain", "No images directory");
+    return;
+  }
+
+  // Pass 1 — list .jpg files with their CRC + size.
+  // Cap at 1000 entries: each entry = 44 B, 1000*44 = 44 KB of static RAM
+  // (well within the ESP32-S3's 512 KB SRAM). Covers ~4 days of images at
+  // the default 3-min interval (20 img/hr × 12 hr/day × 4 days = 960).
+  // Static so we don't blow the task stack; only one ZIP request is in flight
+  // at a time (single-threaded WebServer).
+  struct ZipEntry { char name[32]; uint32_t crc; uint32_t size; uint32_t offset; };
+  static const int ZIP_MAX_ENTRIES = 1000;
+  static ZipEntry entries[ZIP_MAX_ENTRIES];
+  int nEntries = 0;
+
+  File f = root.openNextFile();
+  while (f && nEntries < ZIP_MAX_ENTRIES) {
+    if (!f.isDirectory()) {
+      const char *nm = (const char *)f.name();
+      // Only include .jpg files (skip anything else that may live in /imgs)
+      const char *dot = strrchr(nm, '.');
+      if (dot && strcasecmp(dot, ".jpg") == 0) {
+        File hf = FFat.open(String(IMGS_DIR) + "/" + nm, "r");
+        if (hf) {
+          strncpy(entries[nEntries].name, nm, sizeof(entries[nEntries].name)-1);
+          entries[nEntries].name[sizeof(entries[nEntries].name)-1] = '\0';
+          _zipHashFile(hf, entries[nEntries].crc, entries[nEntries].size);
+          hf.close();
+        }
+        nEntries++;
+      }
+    }
+    f = root.openNextFile();
+  }
+  // If we hit the cap, try to peek at whether more files would have been
+  // included. Log a warning so the operator knows the archive is truncated.
+  bool truncated = false;
+  if (nEntries >= ZIP_MAX_ENTRIES) {
+    File extra = root.openNextFile();
+    if (extra) { truncated = true; extra.close(); }
+  }
+
+  if (nEntries == 0) {
+    server.send(404, "text/plain", "No images to zip");
+    return;
+  }
+
+  if (truncated) {
+    wlogf("[ZIP] Warning: %d+ images present, capping archive at %d entries. "
+          "Delete older images or download in batches.\n",
+          nEntries, ZIP_MAX_ENTRIES);
+  }
+
+  // Begin chunked HTTP response.
+  server.sendHeader("Access-Control-Allow-Origin", "*");
+  server.sendHeader("Content-Type", "application/zip");
+  server.sendHeader("Content-Disposition",
+                    "attachment; filename=\"helios-images.zip\"");
+  server.setContentLength(CONTENT_LENGTH_UNKNOWN);
+  server.send(200, "application/zip", "");
+
+  // Pass 2 — stream local file headers + file data, tracking offsets.
+  // Abort early if the client disconnects mid-stream (saves CPU + flash reads).
+  WiFiClient zipCli = server.client();
+  uint32_t curOffset = 0;
+  bool clientDropped = false;
+  for (int i = 0; i < nEntries && !clientDropped; i++) {
+    entries[i].offset = curOffset;
+
+    // Local file header (30 bytes + name).
+    uint8_t lfh[30 + 32];
+    memset(lfh, 0, sizeof(lfh));
+    // Signature 0x04034b50
+    _putU32(lfh + 0,  0x04034b50u);
+    _putU16(lfh + 4,  20);              // version needed (2.0)
+    _putU16(lfh + 6,  0);               // general purpose flag
+    _putU16(lfh + 8,  0);               // compression method (stored)
+    _putU16(lfh + 10, 0);               // mod time (00:00:00)
+    _putU16(lfh + 12, 0x0021);          // mod date (1980-01-01)
+    _putU32(lfh + 14, entries[i].crc);
+    _putU32(lfh + 18, entries[i].size); // compressed size
+    _putU32(lfh + 22, entries[i].size); // uncompressed size
+    uint16_t nameLen = (uint16_t)strnlen(entries[i].name, sizeof(entries[i].name));
+    _putU16(lfh + 26, nameLen);
+    _putU16(lfh + 28, 0);               // extra field length
+    memcpy(lfh + 30, entries[i].name, nameLen);
+    server.sendContent((const char*)lfh, 30 + nameLen);
+    curOffset += 30 + nameLen;
+
+    // Stream the file bytes.
+    File sf = FFat.open(String(IMGS_DIR) + "/" + entries[i].name, "r");
+    if (sf) {
+      uint8_t buf[1024];
+      size_t n;
+      while ((n = sf.read(buf, sizeof(buf))) > 0) {
+        server.sendContent((const char*)buf, n);
+        curOffset += n;
+        // Detect client disconnect every chunk to avoid wasting flash reads.
+        if (!zipCli.connected()) { clientDropped = true; break; }
+      }
+      sf.close();
+    }
+    // Defensive: feed the watchdog mid-archive.
+    esp_task_wdt_reset();
+  }
+
+  if (clientDropped) {
+    wlogf("[ZIP] Client disconnected mid-archive after %d/%d entries "
+          "(%lu bytes sent)\n", 0, nEntries, (unsigned long)curOffset);
+    return;  // Skip central directory + EOCD — client is gone.
+  }
+
+  // Central directory.
+  uint32_t cdStart = curOffset;
+  uint32_t cdSize  = 0;
+  for (int i = 0; i < nEntries; i++) {
+    uint8_t cdh[46 + 32];
+    memset(cdh, 0, sizeof(cdh));
+    _putU32(cdh + 0,  0x02014b50u);     // central dir signature
+    _putU16(cdh + 4,  20);              // version made by
+    _putU16(cdh + 6,  20);              // version needed
+    _putU16(cdh + 8,  0);               // general purpose flag
+    _putU16(cdh + 10, 0);               // compression method (stored)
+    _putU16(cdh + 12, 0);               // mod time
+    _putU16(cdh + 14, 0x0021);          // mod date
+    _putU32(cdh + 16, entries[i].crc);
+    _putU32(cdh + 20, entries[i].size); // compressed
+    _putU32(cdh + 24, entries[i].size); // uncompressed
+    uint16_t nameLen = (uint16_t)strnlen(entries[i].name, sizeof(entries[i].name));
+    _putU16(cdh + 28, nameLen);
+    _putU16(cdh + 30, 0);               // extra
+    _putU16(cdh + 32, 0);               // comment
+    _putU16(cdh + 34, 0);               // disk number start
+    _putU16(cdh + 36, 0);               // internal attrs
+    _putU32(cdh + 38, 0);               // external attrs
+    _putU32(cdh + 42, entries[i].offset);
+    memcpy(cdh + 46, entries[i].name, nameLen);
+    server.sendContent((const char*)cdh, 46 + nameLen);
+    cdSize += 46 + nameLen;
+  }
+
+  // End-of-central-directory record (22 bytes).
+  uint8_t eocd[22];
+  memset(eocd, 0, sizeof(eocd));
+  _putU32(eocd + 0,  0x06054b50u);
+  _putU16(eocd + 4,  0);                // disk number
+  _putU16(eocd + 6,  0);                // disk where CD starts
+  _putU16(eocd + 8,  (uint16_t)nEntries);
+  _putU16(eocd + 10, (uint16_t)nEntries);
+  _putU32(eocd + 12, cdSize);
+  _putU32(eocd + 16, cdStart);
+  _putU16(eocd + 20, 0);                // comment length
+  server.sendContent((const char*)eocd, 22);
+
+  wlogf("[ZIP] Served %d images (%lu bytes)\n", nEntries, (unsigned long)curOffset);
+}
+
 void handleFiles() {
   server.sendHeader("Access-Control-Allow-Origin","*");
   server.setContentLength(CONTENT_LENGTH_UNKNOWN);
@@ -3490,6 +3754,27 @@ void handlePostConfig() {
   cfg.night_confirm     = (uint8_t)getInt("night_confirm",5);
   cfg.temp_shutdown_c   = getFloat("temp_shutdown_c",75.0f);
   cfg.temp_sleep_s      = (uint16_t)getInt("temp_sleep_s",120);
+  // Server-side clamping — client-side min/max can be bypassed by direct API
+  // calls. Prevents pathological values like sample_interval_s=0 (would
+  // cause continuous sampling) or img_interval_min=0 (continuous capture).
+  if (cfg.sample_interval_s < 5)        cfg.sample_interval_s = 5;
+  if (cfg.sample_interval_s > 300)      cfg.sample_interval_s = 300;
+  if (cfg.img_interval_min  < 1)        cfg.img_interval_min  = 1;
+  if (cfg.img_interval_min  > 60)       cfg.img_interval_min  = 60;
+  if (cfg.jpeg_quality      < 1)        cfg.jpeg_quality      = 1;
+  if (cfg.jpeg_quality      > 63)       cfg.jpeg_quality      = 63;
+  if (cfg.flush_count       < 1)        cfg.flush_count       = 1;
+  if (cfg.flush_count       > 50)       cfg.flush_count       = 50;
+  if (cfg.wifi_autooff_min  < 1)        cfg.wifi_autooff_min  = 1;
+  if (cfg.wifi_autooff_min  > 120)      cfg.wifi_autooff_min  = 120;
+  if (cfg.outlier_factor    < 2.0f)     cfg.outlier_factor    = 2.0f;
+  if (cfg.outlier_factor    > 100.0f)   cfg.outlier_factor    = 100.0f;
+  if (cfg.night_confirm     < 1)        cfg.night_confirm     = 1;
+  if (cfg.night_confirm     > 20)       cfg.night_confirm     = 20;
+  if (cfg.temp_shutdown_c   < 0.0f)     cfg.temp_shutdown_c   = 0.0f;
+  if (cfg.temp_shutdown_c   > 85.0f)    cfg.temp_shutdown_c   = 85.0f;
+  if (cfg.temp_sleep_s      < 30)       cfg.temp_sleep_s      = 30;
+  if (cfg.temp_sleep_s      > 600)      cfg.temp_sleep_s      = 600;
   saveConfig();
   wlog("[CFG] Updated via settings page");
   server.sendHeader("Access-Control-Allow-Origin","*");
@@ -3580,7 +3865,7 @@ void setup() {
   Serial.begin(115200);
   delay(1000);
   wlogInit();
-  wlog("\n[HELIOS] v2.6 booting (no-deinit camera fix)...");
+  wlog("\n[HELIOS] booting...");
 
   initStatusLed();
   logBootReason();
@@ -3645,6 +3930,7 @@ void setup() {
   server.on("/api/live",                  HTTP_GET,  handleLive);
   server.on("/api/files",                 HTTP_GET,  handleFiles);
   server.on("/api/images",                HTTP_GET,  handleImages);
+  server.on("/api/images-zip",            HTTP_GET,  handleImagesZip);
   server.on("/api/settime",               HTTP_GET,  handleSetTime);
   server.on("/api/config",                HTTP_GET,  handleGetConfig);
   server.on("/api/config",                HTTP_POST, handlePostConfig);
