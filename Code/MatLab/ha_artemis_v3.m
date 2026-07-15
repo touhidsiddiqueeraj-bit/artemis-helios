@@ -32,10 +32,10 @@ case 3
  Pm=max(u(6),0.01); Pcurr=max(0,u(1)*u(2));
  eta=min(1.0, Pcurr/Pm);
  % 3-stage charging status (simplified, status-only):
- %   Bulk (CC):         Vbat < 13.8 V
- %   Absorption (CV):   13.8 ≤ Vbat < 14.7 V
- %   Float:             Vbat ≥ 14.7 V (surface charge / maintenance)
- if u(5)<13.80, cs=1; elseif u(5)<14.70, cs=2; else, cs=3; end
+ %   Bulk (CC):         Vbat < 14.70 V
+ %   Absorption (CV):   14.70 ≤ Vbat < 14.76 V
+ %   Float:             Vbat ≥ 14.76 V (surface charge / maintenance)
+ if u(5)<14.70, cs=1; elseif u(5)<14.76, cs=2; else, cs=3; end
  sys=[x(1); eta; cs];
 otherwise, sys=[];
 end

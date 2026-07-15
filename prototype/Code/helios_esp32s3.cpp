@@ -82,7 +82,7 @@
 #define LOOKBACK_STEPS        24        /* 24 hourly samples                  */
 #define G_NORM_MAX            1000.0f   /* Normalisation ceiling (W/m²)        */
 #define V_OC_STC              21.7f     /* 50 Wp mono-Si Voc at STC            */
-#define VMPP_STC              17.4f     /* V_MPP at STC                        */
+#define VMPP_STC              17.8f     /* V_MPP at STC (matches PV S-function) */
 #define K_VMPP                14.26f    /* from paper (exact MPP solution)     */
 #define ALPHA_DEFAULT         0.35f     /* Optimal blend weight (paper §IV-A)  */
 

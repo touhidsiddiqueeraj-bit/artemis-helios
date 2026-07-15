@@ -167,7 +167,7 @@ def fig4():
     a4.legend(fontsize=6.5); a4.grid(True); a4.set_ylim(88,97)
     a4.set_title('(d) α sensitivity analysis')
 
-    fig.suptitle(f'Fig. 4.  LSTM irradiance predictor performance (R²=0.917, MAE=50.7 W m⁻², Year-2 test)',fontsize=8.5,fontweight='bold')
+    fig.suptitle(f'Fig. 4.  LSTM irradiance predictor performance (R²={r2:.3f}, MAE={mae:.1f} W m⁻², Year-2 test)',fontsize=8.5,fontweight='bold')
     fig.tight_layout(); fig.savefig(f'{OUT}/fig4_lstm.png'); plt.close(); print('[OK] Fig 4')
 
 # ── FIG 5: Full-day simulation ───────────────────────────────────────────────

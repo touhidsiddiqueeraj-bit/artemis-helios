@@ -610,7 +610,7 @@ setInterval(fetchFiles,  30000);
 #define MAX_DAYS              14
 #define I2C_SDA               8
 #define I2C_SCL               9
-#define LUX_TO_WM2            (1.0f / 116.0f)
+#define LUX_TO_WM2            0.0079f    /* matches helios_esp32s3.cpp (AM1.5) */
 #define BH1750_ADDR           0x23
 
 // ── WiFi on-demand ─────────────────────────────────────────────────────────

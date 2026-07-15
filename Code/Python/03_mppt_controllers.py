@@ -19,8 +19,7 @@ Reference: Sections III-B, IV-B, V and Table III of the paper.
 """
 
 import numpy as np
-from dataclasses import dataclass, field
-from typing import Optional
+from dataclasses import dataclass
 
 
 # ─────────────────────────────────────────────────────────────────────────────
