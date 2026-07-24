@@ -52,7 +52,15 @@
 #include <string.h>
 #include <stdio.h>
 
-/* ─── Pin definitions ────────────────────────────────────────────────────── */
+/* ─── Pin definitions ──────────────────────────────────────────────────────
+ * ⚠ GPIO CONFLICT MATRIX (requires PCB rev to resolve):
+ *   GPIO  5 : SD_CS  + Camera D0      — both peripherals cannot coexist
+ *   GPIO 18 : UART RX + SD_SCK         — UART and SPI share the same pin
+ *   GPIO 19 : SD_MISO + Camera D2      — Camera D2 not used on Helios-only
+ *   GPIO 21 : SDA     + Camera D3      — I²C bus clashes with camera data
+ *   GPIO 22 : SCL     + Camera PCLK    — I²C bus clashes with camera pixel clk
+ *   GPIO 23 : SD_MOSI + Camera HREF    — SPI MOSI clashes with camera HREF
+ * ──────────────────────────────────────────────────────────────────────── */
 #define PIN_SDA         21
 #define PIN_SCL         22
 #define PIN_UART_TX     17      /* → Artemis RX (PA10)                        */
@@ -60,7 +68,7 @@
 #define PIN_SD_CS        5
 #define PIN_SD_MOSI     23
 #define PIN_SD_MISO     19
-#define PIN_SD_SCK      18      /* shared with UART RX — use HSPI on GPIO 14  */
+#define PIN_SD_SCK      18      /* conflicts with UART RX — fix in PCB rev     */
 
 /* ─── GY302 (BH1750) command map ──────────────────────────────────────────── */
 #define GY302_ADDR            0x23
@@ -87,6 +95,10 @@
 #define ALPHA_DEFAULT         0.35f     /* Optimal blend weight (paper §IV-A)  */
 
 /* ─── WiFi AP credentials ──────────────────────────────────────────────────*/
+/* WARNING: Default credentials are insecure. Override via build flags
+ * -DWIFI_SSID=\"...\" -DWIFI_PASS=\"...\" in platformio.ini, or set custom
+ * values in config.json. The defaults below are for development only.        */
+#pragma message "WARNING: Using default WiFi credentials (Helios-MPPT / sylhet2026) — override for production"
 #define WIFI_SSID             "Helios-MPPT"
 #define WIFI_PASS             "sylhet2026"
 
@@ -560,25 +572,31 @@ static void sd_log(float g_meas, float g_pred, float v_mpp_pred, float alpha)
  * training (the hourly lookback ring uses 60-minute averages of these).
  * ============================================================ */
 
+static int g_train_samples = -1;   /* cached line count; -1 = uninitialised   */
+
 static void train_buf_append(float g_wm2)
 {
     File f = SPIFFS.open(TRAIN_BUFFER_PATH, FILE_APPEND);
     if (!f) return;
     f.printf("%.1f\n", g_wm2);
     f.close();
+    if (g_train_samples >= 0) g_train_samples++;
 }
 
 /**
  * Count lines in SPIFFS training buffer.
+ * Uses cached counter after first read to avoid SPIFFS wear on every tick.
  * Returns -1 on open failure.
  */
 static int train_buf_count(void)
 {
+    if (g_train_samples >= 0) return g_train_samples;
     File f = SPIFFS.open(TRAIN_BUFFER_PATH, "r");
-    if (!f) return -1;
+    if (!f) return g_train_samples = -1;
     int lines = 0;
     while (f.available()) { if (f.read() == '\n') lines++; }
     f.close();
+    g_train_samples = lines;
     return lines;
 }
 
@@ -1222,6 +1240,7 @@ static void handle_post_weights(void)
             g_retrain_ready = 0;
             /* Clear training buffer */
             SPIFFS.remove(TRAIN_BUFFER_PATH);
+            g_train_samples = 0;
             g_server.send(200, "text/plain", "OK");
             Serial.println("[HELIOS] New weights received and loaded");
         } else {
@@ -1301,9 +1320,13 @@ void setup(void)
     /* SD card */
     sd_init();
 
-    /* Camera */
+    /* Camera — disabled by default: GPIO conflict with SD (see pin matrix).
+     * Enable only if camera is fitted and SD card is removed, or after PCB
+     * rev reroutes the conflicting pins.                                     */
+    #if 0
     if (camera_init_ov2640()) Serial.println("[HELIOS] OV2640 OK");
     else                      Serial.println("[HELIOS] OV2640 init failed");
+    #endif
 
     /* Artemis UART */
     ARTEMIS_UART.begin(115200, SERIAL_8N1, PIN_UART_RX, PIN_UART_TX);

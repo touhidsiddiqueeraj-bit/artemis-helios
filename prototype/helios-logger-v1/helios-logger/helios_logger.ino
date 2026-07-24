@@ -533,7 +533,7 @@ async function fetchFiles() {
         '<div class="file-size">'+formatBytes(f.size)+'</div>' +
         '<div class="file-actions">' +
           '<a class="btn btn-teal btn-sm" href="/download?file='+encodeURIComponent(f.name)+'" download>\u2193 CSV</a>' +
-          '<button class="btn btn-danger btn-sm" onclick="deleteFile(\''+f.name+'\')">&#10005;</button>' +
+          '<button class="btn btn-danger btn-sm" onclick="deleteFile(\''+encodeURIComponent(f.name)+'\')">&#10005;</button>' +
         '</div>' +
       '</div>'
     ).join('');
@@ -638,6 +638,7 @@ uint32_t wifiStartMs        = 0;
 uint32_t lastClientMs       = 0;
 uint8_t  btnPrevState       = HIGH;
 uint32_t btnPressMs         = 0;
+bool     btnReleasePending  = false;
 
 #define LIVE_BUFFER_SIZE 360
 struct Sample {
@@ -767,6 +768,13 @@ void stopWiFi() {
 void handleWiFiButton() {
   uint8_t btnState = digitalRead(WIFI_BTN_GPIO);
 
+  // If waiting for button release, check and clear — skip press detection
+  if (btnReleasePending) {
+    if (btnState == HIGH) btnReleasePending = false;
+    btnPrevState = btnState;
+    return;
+  }
+
   // Detect press start
   if (btnState == LOW && btnPrevState == HIGH) {
     btnPressMs = millis();
@@ -779,8 +787,7 @@ void handleWiFiButton() {
     } else {
       startWiFi();
     }
-    // Wait for release to avoid re-triggering
-    while (digitalRead(WIFI_BTN_GPIO) == LOW) delay(10);
+    btnReleasePending = true;
   }
 
   btnPrevState = btnState;
@@ -840,8 +847,8 @@ void handleStatus() {
     latestJson = String(buf);
   }
 
-  char json[512];
-  snprintf(json, sizeof(json),
+  char json[2048];
+  int json_len = snprintf(json, sizeof(json),
     "{\"logging\":%s,\"day\":%lu,\"current_file\":\"%s\","
     "\"total_samples\":%lu,\"lux_start_threshold\":%.1f,"
     "\"lux_stop_threshold\":%.1f,\"fs_total_kb\":%u,"
@@ -856,6 +863,7 @@ void handleStatus() {
     wifiActive ? "true" : "false",
     (unsigned)WiFi.softAPgetStationNum(),
     latestJson.c_str());
+  if (json_len >= (int)sizeof(json)) json[sizeof(json) - 1] = '\0';
 
   server.sendHeader("Access-Control-Allow-Origin", "*");
   server.send(200, "application/json", json);
@@ -957,6 +965,8 @@ void setup() {
   // GY-302 (BH1750)
   Wire.begin(I2C_SDA, I2C_SCL);
   configureBH1750();
+  // Wait for first measurement to complete (CONTINUOUS_HIGH_RES_MODE = 120 ms)
+  delay(200);
   // Verify sensor is responding
   float testLux = lightMeter.readLightLevel();
   if (testLux < 0) {
@@ -1083,9 +1093,10 @@ void loop() {
 
     // Light sleep: CPU off, SRAM retained, peripherals paused
     // GPIO wakeup on BOOT button allows instant WiFi toggle even during sleep
+    // Note: ESP32-S3 requires gpio_wakeup_enable() before esp_sleep_enable_gpio_wakeup_matrix()
     esp_sleep_enable_timer_wakeup(SLEEP_US);
-    esp_sleep_enable_gpio_wakeup();
     gpio_wakeup_enable((gpio_num_t)WIFI_BTN_GPIO, GPIO_INTR_LOW_LEVEL);
+    esp_sleep_enable_gpio_wakeup_matrix();
     esp_light_sleep_start();
     // Execution resumes here after sleep
   }

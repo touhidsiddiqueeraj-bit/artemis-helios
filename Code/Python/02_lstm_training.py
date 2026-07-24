@@ -35,7 +35,7 @@ import numpy as np
 import pandas as pd
 from sklearn.metrics import r2_score, mean_absolute_error, mean_squared_error
 import warnings
-warnings.filterwarnings("ignore")
+warnings.filterwarnings("ignore", category=UserWarning, module="tensorflow")
 
 os.makedirs("models", exist_ok=True)
 os.makedirs("results", exist_ok=True)

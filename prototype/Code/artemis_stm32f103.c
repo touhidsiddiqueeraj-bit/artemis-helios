@@ -56,8 +56,11 @@
 #define INA219_REG_CAL      0x05
 /* Calibration: Cal = trunc(0.04096 / (0.1 Ω × 0.001 A LSB)) = 4096          */
 #define INA219_CAL_VALUE    0x1000
-/* Full-scale 32V, gain ÷8 (320 mV shunt), 12-bit×12 averaging               */
-#define INA219_CONFIG_VALUE 0x3FFF
+/* 16V range, gain ÷8 (320 mV shunt), 8-sample averaging (both bus & shunt).
+ * 8 samples × 2 measurements × ~532 µs per sample ≈ 8.5 ms total conversion,
+ * well within the 100 ms MPPT tick. Previous 128-sample averaging (~140 ms)
+ * caused every other tick to read stale data.                               */
+#define INA219_CONFIG_VALUE 0x377F
 
 /* ─── Buck converter limits ──────────────────────────────────────────────── */
 #define DUTY_MIN            0.05f       /* 5% min duty                         */

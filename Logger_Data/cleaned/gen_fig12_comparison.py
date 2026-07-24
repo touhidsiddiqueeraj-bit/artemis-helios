@@ -66,7 +66,7 @@ for day in ['2026-07-10', '2026-07-11', '2026-07-12', '2026-07-13']:
 all_fv = np.concatenate([v for _, (_, v) in field_days.items()])
 
 # ── Synthetic ensemble ──
-sys.path.insert(0, '/home/touhid/artemis-helios/Code/Python')
+sys.path.insert(0, os.path.abspath(os.path.join(OUT, '..', '..', 'Code', 'Python')))
 from importlib import import_module
 irr_mod = import_module('01_irradiance_generator')
 

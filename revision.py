@@ -1,8 +1,38 @@
+"""
+revision.py — Apply author-revision edits to the Helios-Artemis manuscript.
+
+Usage:
+    python revision.py [DOCX_PATH] [OUT_PATH]
+
+Default paths:
+    DOCX_PATH = 25195-52952-1-SM.docx
+    OUT_PATH  = 25195-52952-1-SM-REVISED.docx
+
+Edit operations (configurable via indices in CONFIG dict):
+    1. Replace abstract (para 5)
+    2. Replace intro paras 9-12 (sections 1-5)
+    3. Replace irradiance-model para (33)
+    4. Insert new subsection F after para 64
+    5. Replace discussion limitations (73)
+    6. Replace conclusion paras 75-77
+    7. Insert new references [14]-[25] after para 116
+"""
+import os, sys
 import docx
 from lxml import etree
 
-DOCX_PATH = '/home/touhid/artemis-helios/25195-52952-1-SM.docx'
-OUT_PATH = '/home/touhid/artemis-helios/25195-52952-1-SM-REVISED.docx'
+HERE = os.path.dirname(os.path.abspath(__file__))
+DOCX_PATH = sys.argv[1] if len(sys.argv) > 1 else os.path.join(HERE, '25195-52952-1-SM.docx')
+OUT_PATH = sys.argv[2] if len(sys.argv) > 2 else os.path.join(HERE, '25195-52952-1-SM-REVISED.docx')
+
+# ── Config ──────────────────────────────────────────────────────────────
+CONFIG = {
+    'para_indices': [5, 9, 10, 11, 12, 33, 73, 75, 76, 77],
+    'new_refs_start': 116,
+    'subsection_after': 64,
+    'verify_indices': [5, 9, 10, 11, 12, 33, 73, 75, 76, 77],
+    'font_sizes': {'heading': 152400, 'body': 127000, 'ref': 114300},
+}
 
 NS = 'http://schemas.openxmlformats.org/wordprocessingml/2006/main'
 
@@ -288,7 +318,7 @@ print(f"Saved revised document to {OUT_PATH}")
 doc2 = docx.Document(OUT_PATH)
 print(f"\nTotal paragraphs: {len(doc2.paragraphs)}")
 
-verify_indices = [5, 9, 10, 11, 12, 33, 73, 75, 76, 77]
+verify_indices = CONFIG['verify_indices']
 for idx in verify_indices:
     p = doc2.paragraphs[idx]
     print(f"\n--- Para {idx} (first 200 chars) ---")

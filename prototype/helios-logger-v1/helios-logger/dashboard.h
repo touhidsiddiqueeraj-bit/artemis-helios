@@ -779,7 +779,7 @@ async function fetchFiles() {
         <div class="file-size">${formatBytes(f.size)}</div>
         <div class="file-actions">
           <a class="btn btn-teal btn-sm" href="/download?file=${encodeURIComponent(f.name)}" download>↓ CSV</a>
-          <button class="btn btn-danger btn-sm" onclick="deleteFile('${f.name}')">✕</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteFile('${encodeURIComponent(f.name)}')">✕</button>
         </div>
       </div>
     `).join('');

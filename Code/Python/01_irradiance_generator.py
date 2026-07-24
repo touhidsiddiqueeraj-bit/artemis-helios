@@ -71,20 +71,20 @@ def get_transition_matrix(cvi: float) -> np.ndarray:
             [0.20, 0.40, 0.38, 0.02],
             [0.50, 0.30, 0.10, 0.10],
         ])
-    elif cvi <= 0.45:         # Transition months
+    if cvi <= 0.45:           # Transition months
         return np.array([
             [0.70, 0.18, 0.08, 0.04],
             [0.20, 0.50, 0.25, 0.05],
             [0.15, 0.30, 0.50, 0.05],
             [0.40, 0.35, 0.15, 0.10],
         ])
-    else:                     # Monsoon (Jun–Sep)
-        return np.array([
-            [0.45, 0.25, 0.24, 0.06],
-            [0.15, 0.40, 0.38, 0.07],
-            [0.10, 0.20, 0.65, 0.05],
-            [0.35, 0.30, 0.25, 0.10],
-        ])
+    # Monsoon (Jun–Sep)
+    return np.array([
+        [0.45, 0.25, 0.24, 0.06],
+        [0.15, 0.40, 0.38, 0.07],
+        [0.10, 0.20, 0.65, 0.05],
+        [0.35, 0.30, 0.25, 0.10],
+    ])
 
 
 def clear_sky_ghi(hour: float, peak: float, sunrise: float, sunset: float) -> float:
