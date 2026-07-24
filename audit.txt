@@ -1,0 +1,457 @@
+The following message is being delivered on behalf of International Journal
+of Power Electronics and Drive Systems (IJPEDS).
+________________________________________________________________________
+-- Paper ID# 25195
+-- ORIGINAL RESEARCH PAPER: minimum 25 references
+-- REVIEW PAPERS: minimum 40 references
+-- IJPEDS GFA & Template (MS Word version):
+https://iaescore.com/gfa/ijpeds.docx
+-- IJPEDS GFA & Template (LaTeX version):
+https://iaescore.com/gfa/ijpeds.rar
+======================================================
+
+Dear Prof/Dr/Mr/Mrs Hussain Touhid Siddiquee,
+
+We have reached a decision regarding your submission entitled
+"Helios-Artemis: Design and Simulation-Based Validation of a
+Dual-Microcontroller Predictive Solar MPPT Controller with On-Device LSTM
+Retraining for Sylhet Monsoon SHS Deployment in Bangladesh" to International
+Journal of Power Electronics and Drive Systems (IJPEDS), a SCOPUS
+(https://www.scopus.com/sourceid/21100258382) and ScimagoJR indexed Journal
+(https://www.scimagojr.com/journalsearch.php?q=21100258382&tip=sid&clean=0).
+
+Our decision is: Revisions Required
+
+Authors are required to strictly revise their manuscript in full accordance
+with the comments and suggestions provided by the Editor-in-Chief, Associate
+Editor, and Reviewers. All feedback must be addressed comprehensively, with
+clear modifications made in the manuscript and accompanied by a detailed
+point‑by‑point response. Failure to implement these revisions as
+instructed will result in rejection of the submission.
+
+Please submit your revised paper in MS Word file format (or LATEX source
+files; ZIP your files if you present your paper in LaTeX). Refer to
+materials at: https://bit.ly/35R6JTs and https://bit.ly/2DxU9MI for further
+guidelines, and submit the revised paper within 8 weeks through our online
+system at the same ID number (NOT as a new submission) on Tab "Review" as an
+"Author Version" file for re-review by Reviewers. Then, your revised paper
+will be judged for final acceptance, revisions, or rejection based on the
+editor's and Reviewers comments.
+
+I look forward for hearing from you
+
+Thank you
+
+Best Regards,
+Prof. Dr. Sanjeevikumar Padmanaban
+University of South-Eastern Norway, Porsgrunn
+ijpeds@iaesjournal.com
+
+----------------------------------------------------
+
+----------------------------------------------------
+# EDITOR-IN-CHIEF COMMENTS:
+
+1. INTRODUCTION section
+         To strengthen the quality and clarity of your manuscript, we
+recommend that the Introduction section be organized systematically and
+include the following elements:
+a). Context – Provide the background and general setting of the research
+topic to help readers understand the relevance.
+b) Highlight the Problems – Clearly state the specific issues or
+challenges that motivate the study.
+c) State of the Art – Summarize the most recent and relevant literature to
+show the current progress in the field.
+d) Gap Analysis – Identify what is missing or insufficient in existing
+studies, and explain why further research is needed.
+e) Contribution – Describe the novelty and main contributions of your work
+compared to previous studies.
+f) Significance – Emphasize the importance and potential impact of your
+findings for the research community and practical applications.
+By structuring the Introduction in this way, your paper will present a clear
+rationale, demonstrate originality, and highlight its relevance to both
+academic and practical audiences.
+
+2. CONCLUSION section
+         To ensure that the Conclusion provides a clear and impactful
+closure, please structure it with the following elements:
+a). What Has Been Done
+        Explicitly state the main actions and achievements of your study
+(e.g., “In this work, we developed…, implemented…, and
+validated…”).
+        This should directly connect to the objectives and gap identified in
+the Introduction section.
+b). Summary of Key Findings
+        Highlight the most important results and how they address the
+research problem.
+        Emphasize the novelty and contribution compared to previous studies.
+c). Limitations
+        Briefly acknowledge any constraints or weaknesses that may affect
+generalizability.
+        Keep this concise and factual.
+d). Future Directions
+        Suggest possible improvements, extensions, or new research questions
+arising from your study.
+        Indicate how future work can build upon your contributions.
+
+----------------------------------------------------
+
+----------------------------------------------------
+# ASSOCIATE EDITORS COMMENTS:
+
+1. The METHOD section is a detailed step-by-step description of the
+experimental procedure that includes all of the information needed to
+replicate the work described in the paper. To ensure clarity and
+reproducibility, please structure the Method section with the following
+components:
+a) Research Design / Approach
+        Explain the overall design (experimental, simulation, survey, case
+study, etc.).
+        Justify why this design is appropriate to address the research
+problem.
+b) Materials / Data Sources
+        Describe datasets, materials, tools, or equipment used.
+        Include details such as origin, size, characteristics, and any
+preprocessing.
+c) Procedures / Implementation Steps
+        Present the step‑by‑step process of how the study was conducted.
+        Use subheadings if necessary (e.g., Data Collection, Algorithm
+Development, Simulation Setup).
+        Ensure the description is detailed enough for replication.
+d) Models / Algorithms / Techniques
+        Provide mathematical models, algorithms, or frameworks applied.
+        If you propose a new method, explain its workflow clearly.
+        Use diagrams, flowcharts, or pseudocode where helpful.
+e) Validation / Evaluation Strategy
+        Explain how you tested or validated the method (e.g., experiments,
+benchmarks, statistical tests).
+        Mention performance metrics or criteria used for evaluation.
+f) Ethical Considerations (if applicable)
+        State compliance with ethical standards (human subjects, data
+privacy, etc.).
+Key Notes for Authors:
+    The Method section should directly connect to the gap identified in the
+Introduction.
+    Avoid vague descriptions; provide enough detail for another researcher
+to replicate the study.
+    Use clear subheadings to improve readability.
+    Keep the narrative objective and technical, without interpretation
+(results and discussion belong in later sections).
+
+2. RESULTS AND DISCUSSION section
+         To ensure clarity, coherence, and strong scientific impact, please
+structure the Results and Discussion section with the following components:
+a) Presentation of Results
+        Report findings objectively, using tables, figures, and graphs where
+appropriate.
+        Ensure all results directly relate to the research questions and
+methods described.
+        Avoid interpretation here; focus first on presenting the data
+clearly.
+b) Analysis and Interpretation
+        Explain what the results mean in relation to the research
+objectives.
+        Highlight patterns, trends, or anomalies.
+        Connect findings back to the problems and gap identified in the
+Introduction.
+c) Comparison with Previous Studies (State of the Art)
+        Discuss how your results align with, differ from, or extend existing
+literature.
+        Cite relevant studies to show how your work contributes to the
+field.
+d) Implications of Findings
+        Explain the theoretical, practical, or technological significance of
+your results.
+        Show how the findings advance knowledge or solve the highlighted
+problems.
+Key Notes for Authors:
+    Use figures and tables effectively; each should be referenced and
+explained in the text.
+    Ensure the Discussion is not just a repetition of results but provides
+insight and context.
+    Maintain a logical flow: Results → Interpretation → Comparison →
+Implications → Limitations → Future Work.
+    Keep the tone analytical and critical, not descriptive only.
+
+------------------------------------------------------
+
+------------------------------------------------------
+Reviewer A:
+
+The paper addresses MPPT improvement for photovoltaic Solar Home Systems
+operating under highly variable monsoon conditions in Bangladesh. A key
+strength of the work is its relevance to renewable energy and photovoltaic
+control, which fits well within the scope of IJPEDS. The manuscript is also
+generally well organized, following a logical flow from system design to
+simulation results and discussion. The language is generally understandable
+and readable, although several sentences are excessively long and dense, and
+professional English proofreading would improve clarity and readability.
+
+The main limitation is the disconnect between the practical deployment
+claims and the evidence provided. Although the controller is presented as a
+solution for real Solar Home System deployment, Section V.C explicitly
+states that the study is entirely simulation-based and that no hardware
+measurements or field validation have been performed. As a result, the large
+performance gains reported in Table III remain unverified in practice. The
+validation presented in Section IV.E only compares simulated baseline P&O
+results with literature data and does not validate the proposed controller
+itself. In addition, conclusions regarding benefits for the IDCOL SHS
+program, large-scale deployment impact, and economic advantages extend
+beyond what can be demonstrated from synthetic simulations alone.
+
+The reference list is relatively limited, containing only 13 references.
+While the current references include both foundational MPPT literature and
+some recent publications, the overall coverage is not sufficient to
+establish a comprehensive state-of-the-art review. However, additional
+recent references from leading journals in photovoltaic systems, MPPT
+control, embedded AI, and power electronics would strengthen the novelty
+positioning.
+
+There are also formatting and presentation issues that should be addressed.
+The citation numbering should be carefully checked to ensure that references
+appear in proper sequential order throughout the manuscript. The manuscript
+should also be revised to fully comply with the latest IJPEDS template and
+formatting requirements, particularly for standard sections such as Funding
+Information, Author Contributions Statement, Conflict of Interest Statement,
+and Data Availability Statement.
+
+The paper is currently written by a single author. Although single-author
+papers are permitted in international journals and do not constitute a
+scientific weakness by themselves, studies involving controller design,
+machine learning development, simulation modeling, hardware architecture,
+and deployment analysis typically benefit from collaboration and independent
+technical verification. The manuscript would be strengthened if the
+contributions of each research activity were transparently documented
+through a formal Author Contributions Statement following international
+publishing standards.
+
+The topic is relevant and the proposed approach shows promise, but the
+current evidence supports only simulation-level conclusions. Hardware
+validation, stronger verification of the irradiance model, a more
+comprehensive literature foundation, improved compliance with journal
+formatting requirements, and more cautious interpretation of practical
+deployment benefits are needed before the claims can be considered
+sufficiently supported.
+
+------------------------------------------------------
+
+------------------------------------------------------
+Reviewer B:
+
+The paper addresses a relevant topic for IJPEDS by combining LSTM-based
+irradiance prediction with MPPT control for photovoltaic systems. The
+proposed dual-MCU architecture is interesting and the reported efficiency
+gains under monsoon conditions could be valuable for off-grid solar
+applications.
+
+However, several important issues limit the current contribution. The most
+significant concern is that all results are simulation-based. Section V.C
+explicitly states that no hardware measurements were performed, yet the main
+claims rely on the efficiency improvements reported in Table III and Figures
+5–8. Without experimental validation, it is difficult to assess the
+practical effectiveness of the controller. In addition, Sections III.C and
+III.D do not provide sufficient details regarding LSTM training, synthetic
+dataset generation, parameter selection, and Monte Carlo procedures, which
+limits reproducibility. The Introduction and Literature Review also do not
+clearly establish how the proposed dual-MCU architecture advances beyond
+existing LSTM-based predictive MPPT approaches.
+
+The manuscript also does not appear to follow the standard journal
+manuscript template. Several formatting elements commonly required by IJPEDS
+are missing or incomplete. The reference list contains only 13 references,
+which is relatively limited for a research article covering MPPT, machine
+learning, photovoltaic systems, and embedded control. Additional recent and
+relevant references, particularly from the last five years, should be
+included to better support the novelty claims and contextualize the work
+within current research trends. Furthermore, an author biography section is
+not provided and should be added if required by the journal format.
+
+These issues appear fixable through stronger validation, clearer
+methodological reporting, improved manuscript formatting, expansion of the
+literature review and reference base, and a more rigorous novelty analysis
+relative to recent studies.
+
+The topic is within the scope of IJPEDS and has reasonable publication
+potential. However, the absence of experimental validation, insufficient
+methodological transparency, limited literature coverage, and non-compliance
+with several manuscript preparation requirements currently prevent reliable
+verification and evaluation of the reported contributions.
+
+------------------------------------------------------
+
+------------------------------------------------------
+Reviewer C:
+
+Does the title of the paper accurately reflect the major focus contribution
+of this paper?:
+        Yes
+
+If No, Please suggest change of the title as appropriate:
+
+
+Is the abstract an appropriate and adequate digest of the work?:
+        Yes
+
+Is the paper clear, concise, and well organized?:
+        Yes
+
+Rate of the contribution strength to the field is represented in this paper:
+
+        Average
+
+Rate the scientific quality of the paper?:
+        Good
+
+As far as your knowledge, have the authors already published a very similar
+paper?:
+        No
+
+If yes, kindly please cite below:
+
+
+Do authors place the paper in proper context by citing relevant papers?:
+        Yes
+
+Is the paper free from obvious errors, misconceptions, or ambiguity?:
+        Yes
+
+Is the paper written in correct English?:
+        Yes
+
+If No, please note grammatical errors and suggest corrections:
+
+
+Are the references in IJPEDS style?:
+        Yes
+
+Are the figures and tables in IJPEDS style, clear, relevant, and are the
+captions adequate?:
+        Yes
+
+Is the length of the paper adequate?:
+        Yes
+
+Please mark appropriate scale for the overall grade for this paper? (A score
+of 7 or above typically provides ground for IJPEDS acceptance):
+        8
+
+Reviewer's comments and suggestions to improve the paper. (If it is not
+possible, kindly please use separate sheets or a copy of the paper for
+comments and suggestions for revision. Indicate whether revisions are
+mandatory or suggested. Please use word processing type format if possible,
+and then upload or submit via email to Ijpeds@iaesjournal.com):
+
+        check comment in the file
+table 2- math inconsistency
+boost buck - but conventional it cannot boost voltage
+many formula are in text- make it formula and label it
+
+------------------------------------------------------
+
+------------------------------------------------------
+Reviewer D:
+
+Does the title of the paper accurately reflect the major focus contribution
+of this paper?:
+        Yes
+
+If No, Please suggest change of the title as appropriate:
+
+
+Is the abstract an appropriate and adequate digest of the work?:
+        Yes
+
+Is the paper clear, concise, and well organized?:
+        Yes
+
+Rate of the contribution strength to the field is represented in this paper:
+
+        Average
+
+Rate the scientific quality of the paper?:
+        Average
+
+As far as your knowledge, have the authors already published a very similar
+paper?:
+        No
+
+If yes, kindly please cite below:
+
+
+Do authors place the paper in proper context by citing relevant papers?:
+        Yes
+
+Is the paper free from obvious errors, misconceptions, or ambiguity?:
+        Yes
+
+Is the paper written in correct English?:
+        No
+
+If No, please note grammatical errors and suggest corrections:
+        dont use we in papers
+
+Are the references in IJPEDS style?:
+        Yes
+
+Are the figures and tables in IJPEDS style, clear, relevant, and are the
+captions adequate?:
+        Yes
+
+Is the length of the paper adequate?:
+        Yes
+
+Please mark appropriate scale for the overall grade for this paper? (A score
+of 7 or above typically provides ground for IJPEDS acceptance):
+        7
+
+Reviewer's comments and suggestions to improve the paper. (If it is not
+possible, kindly please use separate sheets or a copy of the paper for
+comments and suggestions for revision. Indicate whether revisions are
+mandatory or suggested. Please use word processing type format if possible,
+and then upload or submit via email to Ijpeds@iaesjournal.com):
+        Reviewer Comments on the Manuscript
+Title: Helios-Artemis: Design and Simulation-Based Validation of a
+Dual-Microcontroller Predictive Solar MPPT Controller with On-Device LSTM
+Retraining for Sylhet Monsoon SHS Deployment in Bangladesh
+
+•       The manuscript lacks experimental or hardware validation, making the
+practical applicability of the proposed controller uncertain.
+•       The study relies entirely on synthetic irradiance data, and validation
+using real measured datasets is strongly recommended.
+•       The reported MPPT efficiency improvement (70.9% to 95.1%) appears
+unusually high and requires stronger justification.
+•       Comparative analysis with recent intelligent MPPT techniques such as
+Fuzzy Logic, ANFIS, PSO, and Reinforcement Learning is missing.
+•       The literature review should be expanded to include recent studies
+(2023–2026) on AI-based and Edge-AI MPPT systems.
+•       The selection of the 32-unit LSTM architecture and prediction horizon
+requires further technical justification.
+•       The generalization capability of the proposed model for other climatic
+regions has not been demonstrated.
+•       The manuscript should include a dedicated discussion on the impact of
+partial shading conditions in solar PV systems and incorporate recent
+studies on shading-induced power losses, advanced MPPT techniques, power
+optimization, and performance enhancement strategies to strengthen the
+technical depth and practical relevance of the work. The authors are
+encouraged to review the following relevant references:
+https://ieeexplore.ieee.org/document/11182755,
+https://ieeexplore.ieee.org/document/11182757,
+https://ieeexplore.ieee.org/abstract/document/10910509,
+https://link.springer.com/article/10.1007/s00542-023-05564-0,
+https://ieeexplore.ieee.org/abstract/document/10201617,
+https://ieeexplore.ieee.org/abstract/document/10205941,
+https://www.tandfonline.com/doi/full/10.1080/02564602.2022.2127944,
+https://www.tandfonline.com/doi/full/10.1080/15567036.2022.2083277,
+https://link.springer.com/chapter/10.1007/978-981-19-0745-6_54, and
+https://ieeexplore.ieee.org/abstract/document/9641543.
+
+------------------------------------------------------
+
+------------------------------------------------------
+Reviewer E:
+
+Does the title of the paper accurately reflect the major focus contribution
+of this paper?:
+        Yes
+
+If No, Please suggest change of t
