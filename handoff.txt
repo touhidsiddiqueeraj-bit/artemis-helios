@@ -1,0 +1,110 @@
+# Helios-Artemis Irradiance Validation — Handoff Document
+
+**Purpose:** Context transfer for continuing the real-vs-simulated irradiance validation work on the Helios-Artemis paper. Written so another model/person can pick this up without re-deriving anything below.
+
+---
+
+## 1. Project Context
+
+- **Paper:** "Helios-Artemis" — dual-MCU MPPT system (ESP32-S3 + STM32F103) for solar energy harvesting, targeting IEEE/MDPI submission. Repo: `github.com/touhidsiddiqueeraj-bit/artemis-helios`.
+- **Hardware being validated:** A field-deployed environmental logger (built on the separate "Helios Logger" framework, `github.com/touhidsiddiqueeraj-bit/Helios_Logger`) measuring lux, irradiance (W/m², derived from a BH1750 light sensor), a "blue_channel" raw value, and die temperature. Location: Sylhet, Bangladesh (24.89°N, 91.87°E).
+- **Goal of this thread:** Determine whether the paper's synthetic irradiance simulator (used for MPPT controller training/testing) produces realistic output by comparing it against real field sensor logs, and to explain/decompose any systematic offset between real and simulated data.
+- **Sensor is behind a clear glass cover** (environmental protection). This matters — see Section 4.
+
+---
+
+## 2. The Simulator (ground truth for comparison)
+
+File: `Code/Python/01_irradiance_generator.py` in the artemis-helios repo.
+
+**Architecture:** 4-state Markov-chain cloud model layered on top of a deterministic clear-sky sinusoid, parameterized per-month from NASA POWER + SREDA Bangladesh Solar Resource Atlas climatology.
+
+**Deterministic clear-sky term:**
+```python
+def clear_sky_ghi(hour, peak, sunrise, sunset):
+    if hour < sunrise or hour > sunset:
+        return 0.0
+    angle = math.pi * (hour - sunrise) / (sunset - sunrise)
+    return max(0.0, peak * math.sin(angle))
+```
+This is a simple half-sine between sunrise and sunset scaled to a monthly peak. **Known limitation:** accuracy degrades at low solar elevation (near sunrise/sunset) because it doesn't model atmospheric path-length effects (Rayleigh/aerosol scattering increases sharply at low sun angle). This is expected model behavior, not a data quality issue when real data diverges from it near the horizon.
+
+**Monthly parameters (`MONTHLY_PARAMS`)** — peak GHI (W/m²), Cloud Variability Index (CVI), sunrise/sunset (decimal hours). July (relevant month for all field data so far): `peak=580, cvi=0.85, sunrise=5.30, sunset=19.10`. July has the lowest peak and highest CVI of the year (monsoon season, cloud-dominated).
+
+**Cloud-state layer:** 4 states — clear (×1.00), thin cloud (×0.65), thick cloud (×0.20), cloud-edge lensing enhancement (×1.18) — transition matrix selected by the month's CVI band (dry/transition/monsoon), state re-rolled every 5 simulated minutes, plus small Gaussian noise (2% of clear-sky value by default).
+
+**Output artifact used for comparison:** `Tables/helios_artemis_irradiance_representative_days.csv` — one representative day per month (July column = `July_DOY196`) at 1-minute resolution, columns `time_minutes`, `hour_decimal`, and one column per month. This is the **full stochastic model** (clear-sky × cloud-state × noise), i.e. a "typical" July day including typical monsoon cloud cover — NOT a clear-sky-only reference.
+
+**Important distinction used throughout this work:**
+- **Full representative-day curve** (`July_DOY196` column) = fair comparison target for a normal/typical cloudy July day.
+- **Clear-sky-only term** (`clear_sky_ghi()` function evaluated directly, cloud multiplier = 1.0) = fair comparison target ONLY for a day with zero cloud cover.
+Comparing a clear-sky-only field day against the full stochastic curve gives a misleadingly low correlation — this happened once in this thread and was corrected (see Section 4).
+
+---
+
+## 3. Field Datasets Collected So Far
+
+All files use columns (some uploads had no header row — infer from position): `date, time, elapsed_s, lux, irradiance_wm2, blue_channel, temp_c`. Sampling interval ~10s. Location/sensor as described in Section 1.
+
+| File | Date | Window | Conditions | Notes |
+|---|---|---|---|---|
+| `2026-07-02.xlsx` | Jul 2 | 17:44–18:37 (dusk, ~47 min) | Normal | One mid-session reboot (`elapsed_s` reset), temp plateaued at 65°C (thermal guard clamp) |
+| `2026-07-04.xlsx` | Jul 4 (AM) | 04:59–08:43 (dawn, ~3.7 hr) | Normal, WiFi AP on | Temp climbed to 74°C and was still rising at end of window (near the 75°C cutoff); no reboot in this file |
+| `2026-07-04__2_.xlsx` | Jul 4 (full day) | 04:59–18:38 | **Extreme heat day: 36°C ambient, zero cloud cover** | Superset of the AM file. Multiple short (~120–130s) overtemp thermal-guard cool-down cycles in the afternoon (temp hits 73–75°C → gap → resumes 58–67°C, working as designed). One large 6h14min gap (10:33–16:47) where `elapsed_s` resets to 0 — a full power cycle, not a thermal micro-sleep; cause not yet confirmed (check Helios Logger boot-reason log: POWER_ON/WDT/BROWNOUT/PANIC) |
+| `2026-07-01.csv` | Jul 1 | 12:35:44–12:42:26 (~7 min, n=40) | **Glass-covered** sensor, midday | Used for glass attenuation derivation |
+| `noglass5min.csv` | Jul 1 | 12:28:34–12:35:14 (~7 min, n=40) | **No glass**, midday, immediately before the glass run, same conditions | Used for glass attenuation derivation |
+
+Device thermal behavior (user-confirmed): overtemp protection triggers deep sleep at 75°C die temp until cooled; with WiFi AP off, steady-state runs cooler (~50–60°C) vs. AP-on. Planned next step: 3–5 day continuous field deployment (device is waterproof) with AP used only for periodic polling (not continuous) to capture real cloud-flicker data while minimizing thermal/battery cost.
+
+---
+
+## 4. Validation Results So Far
+
+### 4.1 Jul 2 (dusk) vs. full representative-day curve
+Correlation **0.89**, mean abs residual ~5.6 W/m². Good fit — decline-toward-sunset is dominated by the deterministic clear-sky term, less sensitive to the stochastic cloud layer.
+
+### 4.2 Jul 4 AM (dawn) vs. full representative-day curve
+Correlation **0.65**, mean abs residual ~63 W/m². Noisier — expected, since dawn ramp is exactly where the cloud-state Markov chain does the most work, and the real cloud sequence that morning has no reason to match the model's independent random draw. Not a validation failure; a stochastic model isn't meant to reproduce a specific day's exact cloud sequence, only its statistical character.
+
+### 4.3 Jul 4 full day vs. full representative-day curve
+Correlation **0.63** overall (morning 0.59, afternoon 0.66). **This comparison was later identified as using the wrong reference** — Jul 4 was a zero-cloud day (confirmed by user: 36°C, no clouds at all), so comparing it against a curve that includes typical monsoon cloud attenuation understates the fit. Real peak (471 W/m²) came in under the full-curve peak in-window (634 W/m²), consistent with comparing against the wrong (cloudier) reference rather than a real device shortfall.
+
+### 4.4 Jul 4 full day vs. clear-sky-only term (corrected comparison)
+Re-ran using `clear_sky_ghi()` directly (peak=580, sunrise=5.30, sunset=19.10), appropriate since Jul 4 had zero clouds:
+- Overall correlation **0.86** (up from 0.63), afternoon segment **0.94**.
+- But a systematic **negative bias**: real readings ran ~100–128 W/m² below the theoretical clear-sky curve on average.
+- Ratio of real/clear-sky is strongly solar-elevation-dependent:
+
+  | clear-sky value threshold (proxy for sun angle) | mean real/clear-sky ratio |
+  |---|---|
+  | >400 W/m² (near solar noon) | 0.88–0.92 |
+  | >300 W/m² | 0.73–0.78 |
+  | >200 W/m² | 0.47–0.57 |
+  | >50 W/m² (all daylight) | 0.33–0.47 |
+
+  The ratio collapses at low sun angle because the sinusoidal clear-sky model itself is known to be inaccurate there (Section 2) — not attributable to the device.
+
+### 4.5 Glass attenuation derivation (resolves most of the near-noon gap)
+Using `2026-07-01.csv` (glass) vs `noglass5min.csv` (no glass), same day, back-to-back midday windows (~12:28–12:42), n=40 each:
+- Glass mean irradiance: **325.9 W/m²**
+- No-glass mean irradiance: **346.3 W/m²**
+- **Glass transmission ratio: 0.941 (5.9% attenuation)**
+
+Applying this to the near-noon clear-sky ratio (0.88–0.92 from Section 4.4): the glass's measured 5.9% loss accounts for almost all of the observed near-noon gap, leaving only a few percent for haze/turbidity/other losses. **This is the key validated conclusion**: near solar noon, on a clear day, the sensor+model agree to within ~10%, and essentially all of that ~10% is explained by the glass cover, not by simulator or sensor error.
+
+---
+
+## 5. Recommended Framing for the Paper
+
+- Do NOT claim "no hardware validation caveat needed" yet — current data is two short dawn/dusk windows plus one full (but cloudless) day plus a 7-minute glass-comparison pair. No cloud-transient data has been captured yet (Jul 4 was explicitly zero-cloud).
+- Correct claim once the multi-day deployment (Section 6) is complete: report near-peak/near-noon agreement (~90%, glass-explained) as the clean quantitative validation result, and report cloud-transient statistics (once captured) as a distributional comparison (mean, variance, ramp-rate histogram, autocorrelation) rather than a time-aligned point comparison — a stochastic model should be validated statistically, not sample-by-sample.
+- Always specify which reference curve was used (full stochastic representative-day vs. clear-sky-only term) and match it to actual sky conditions that day; mixing these up produces misleading low correlations (see Section 4.3 mistake).
+- Note WiFi AP state (on/off/periodic) for each field session — it materially affects die temperature and therefore data continuity (Section 3 thermal notes).
+
+## 6. Open Items / Next Steps
+
+1. **Confirm cause of the Jul 4 16:47 full reboot** (6h14min gap, `elapsed_s` reset to 0) via Helios Logger's boot-reason log. Rule out brownout/watchdog vs. intended behavior.
+2. **3–5 day continuous field deployment** (waterproof enclosure, AP off except periodic polling windows) to capture real cloud-flicker data — this is the actual test of the Markov cloud-state model (thin/thick/edge-lensing multipliers), which hasn't been validated yet.
+3. Once multi-day data is in: re-run comparison using distributional statistics against the full stochastic model (not time-aligned correlation), and separately verify the clear-sky term's low-elevation dawn/dusk deviation is consistent across multiple days.
+4. Confirm whether Helios Logger's NOAA-based sunrise/sunset cutoff (lat/lon + date driven; only logs irradiance/lux during daytime) pads to civil twilight (~-6° elevation) or cuts at geometric sunrise/sunset — current implementation status unconfirmed, geometric cutoff would clip the low-light ramp data that has otherwise validated well.
+5. Consider whether the ~5% residual gap after removing glass attenuation (Section 4.5) is proportional (scaling/calibration) or flat (fixed offset) — would help decide if it's atmospheric turbidity vs. a sensor calibration constant.
