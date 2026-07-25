@@ -26,7 +26,7 @@ C1,C2 = 3.5, 7.16
 B,R,G,O,P,GR = '#1565C0','#C62828','#2E7D32','#E65100','#6A1B9A','#546E7A'
 
 def fig6():
-    fig,(a1,a2)=plt.subplots(1,2,figsize=(C2,3.0))
+    fig,(a1,a2)=plt.subplots(2,1,figsize=(C2,4.5),gridspec_kw={'hspace':0.45})
     methods=['Plain P&O','VS-P&O\n(no LSTM)','Helios-Artemis\n(this work)']
     mon=[70.7,85.2,94.0]; ann=[85.8,88.1,94.0]; x=np.arange(3); w=0.36
     b1=a1.bar(x-w/2,mon,w,label='Monsoon July',color=B,alpha=0.85,edgecolor='white',lw=0.4)

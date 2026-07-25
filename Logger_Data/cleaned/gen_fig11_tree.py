@@ -61,7 +61,7 @@ nodes_info.append(make_node('mc', 'Monte Carlo Gen.', '30 July days · 10 seeds'
 
 # Level 3: Merge
 cy3 = TOP + 3 * LEVEL_H
-nodes_info.append(make_node('merge', 'Path B — Pattern Validation', 'Ramp-rate KS D = 0.38 · μ within 10%', cx0, cy3, '#f3e8fd', '#7b1fa2'))
+nodes_info.append(make_node('merge', 'Path B — Pattern Validation', 'Ramp-rate KS D = 0.402 · μ within 10%', cx0, cy3, '#f3e8fd', '#7b1fa2'))
 
 # Level 4: Output
 cy4 = TOP + 4 * LEVEL_H

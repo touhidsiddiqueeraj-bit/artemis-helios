@@ -337,9 +337,9 @@ if __name__ == "__main__":
     model_32 = tf.keras.models.load_model("models/lstm_32u.keras")
     metrics_32 = evaluate_model(model_32, X_test, y_test)
     print(f"\nFinal results on Year-2 independent test set:")
-    print(f"  R² (daytime):   {metrics_32['r2_day']:.4f}  (paper: 0.917)")
-    print(f"  MAE (daytime):  {metrics_32['mae_day']:.1f} W/m²  (paper: 50.7)")
-    print(f"  RMSE (daytime): {metrics_32['rmse_day']:.1f} W/m²  (paper: 63.6)")
+    print(f"  R² (daytime):   {metrics_32['r2_day']:.4f}  (paper: 0.835)")
+    print(f"  MAE (daytime):  {metrics_32['mae_day']:.1f} W/m²  (paper: 54.7)")
+    print(f"  RMSE (daytime): {metrics_32['rmse_day']:.1f} W/m²  (paper: 72.6)")
     pd.DataFrame([metrics_32]).to_csv("results/final_model_metrics.csv", index=False)
 
     # ── Flex TFLite conversion (for ESP32-S3 deployment) ───────────────────

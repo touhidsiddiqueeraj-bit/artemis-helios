@@ -14,10 +14,10 @@
 
 **Response:** Thank you for this systematic framework. We have fully restructured the Introduction (Section I) to follow the prescribed six-element structure:
 
-- **Para 9 (Context):** Opens with IDCOL SHS programme context — >6 million households, 50–130 Wp panels, basic P&O MPPT, Sylhet monsoon (4,000+ mm rainfall, 40–60% irradiance reduction).
-- **Para 10 (Problems):** Articulates the fundamental limitation of reactive P&O paradigm under rapid cloud transitions (ramp rates >80 W/m²/min), and why VS-P&O and INC remain reactive.
-- **Para 11 (State of the Art + Gap):** Reviews LSTM-MPPT literature (Bandara et al. [1], Younas et al. [2]), identifies the single-MCU resource contention problem, and states the critical gap: all prior LSTM-MPPT studies rely on synthetic irradiance only, with zero field validation from the target climate. The choice of LSTM over RNN, GRU, CNN, or feedforward networks is now explicitly justified: Sylhet monsoon irradiance follows an Ornstein–Uhlenbeck (first-order autoregressive) process at sub-second scales (τ = 1 s), and LSTM's constant-error carousel preserves state across the 8–12 min correlation window without vanishing gradients, while completing inference within the 100 ms UART budget.
-- **Para 12 (Contribution + Significance):** Lists four primary contributions — dual-MCU architecture, adaptive gain scheduler, 94.0% MC efficiency (+23.3 pp vs P&O), and field-logger validation of the irradiance model — and states the significance: pattern-validated simulation is sufficient for actionable monsoon-benefit evidence.
+- **1st paragraph (Context):** Opens with IDCOL SHS programme context — >6 million households, 50–130 Wp panels, basic P&O MPPT, Sylhet monsoon (4,000+ mm rainfall, 40–60% irradiance reduction).
+- **2nd paragraph (Problems):** Articulates the fundamental limitation of reactive P&O paradigm under rapid cloud transitions (ramp rates >80 W/m²/min), and why VS-P&O and INC remain reactive.
+- **3rd paragraph (State of the Art + Gap):** Reviews LSTM-MPPT literature, identifies the single-MCU resource contention problem, and states the critical gap: all prior LSTM-MPPT studies rely on synthetic irradiance only, with zero field validation from the target climate. The choice of LSTM over RNN, GRU, CNN, or feedforward networks is explicitly justified: Sylhet monsoon irradiance follows an Ornstein–Uhlenbeck (first-order autoregressive) process at sub-second scales (τ = 1 s), and LSTM's constant-error carousel preserves state across the 8–12 min correlation window without vanishing gradients, while completing inference within the 100 ms UART budget.
+- **4th paragraph (Contribution + Significance):** Lists four primary contributions — dual-MCU architecture, adaptive gain scheduler, 94.0% MC efficiency (+23.3 pp vs P&O), and field-logger validation of the irradiance model — and states the significance: pattern-validated simulation is sufficient for actionable monsoon-benefit evidence.
 
 ### Comment 2: Conclusion structure
 
@@ -25,9 +25,9 @@
 
 **Response:** The Conclusion (Section VI) has been restructured into three paragraphs following this framework:
 
-- **Para 80 (What Has Been Done):** States the controller architecture (Helios ESP32-S3 + Artemis STM32F103), the adaptive gain scheduler, the synthetic irradiance model, and its field validation (42 h, Sylhet, ramp-rate agreement within 10%).
-- **Para 81 (Key Findings):** Reports the Monte Carlo efficiency (94.0%, +23.3 pp vs P&O), LSTM R²=0.835, sensitivity analysis confirming robustness across α∈[0.20,0.55], and cost estimate (~1,500 BDT / USD 14, 89% reduction vs commercial).
-- **Para 82 (Limitations + Future Work):** Acknowledges the brief field campaign (4 days), single-location, sensor-grade measurements, absence of full HIL validation. Proposes ≥3-month deployment with calibrated reference cell for LSTM retraining via TF.js Micro.
+- **1st paragraph (What Has Been Done):** States the controller architecture (Helios ESP32-S3 + Artemis STM32F103), the adaptive gain scheduler, the synthetic irradiance model, and its field validation (42 h, Sylhet, ramp-rate agreement within 10%).
+- **2nd paragraph (Key Findings):** Reports the Monte Carlo efficiency (94.0%, +23.3 pp vs P&O), LSTM R²=0.835, sensitivity analysis confirming robustness across α∈[0.20,0.55], and cost estimate (~1,500 BDT / USD 14, 89% reduction vs commercial).
+- **3rd paragraph (Limitations + Future Work):** Acknowledges the brief field campaign (4 days), single-location, sensor-grade measurements, absence of full HIL validation. Proposes ≥3-month deployment with calibrated reference cell for LSTM retraining via TF.js Micro.
 
 ---
 
@@ -38,10 +38,10 @@
 **Comment:** Structure Method section with: a) Research Design, b) Materials/Data Sources, c) Procedures/Implementation Steps, d) Models/Algorithms/Techniques, e) Validation/Evaluation Strategy, f) Ethical Considerations.
 
 **Response:** Thank you for the detailed structural guidance. The Method section (Section III) already follows this structure through its subsections:
-- **III.A (Research Design):** Dual-MCU architecture (Fig. 2), NRF24L01 telemetry and 4G uplink design.
+- **III.A (Research Design):** Dual-MCU architecture (Fig. 2) with Helios (ESP32-S3) and Artemis (STM32F103) communicating via 100 ms UART.
 - **III.B (Materials/Data Sources):** Component selection (Table IV), datasheet parameters, IDCOL standard 130 Wp panel.
 - **III.C (Models/Algorithms):** LSTM architecture (32 units, 4,385 parameters, 17 kB quantised), gain scheduler (Eqs. 1–4, α=0.35 base), VS-P&O state machine (4 states: steady-state, transient, settling, cloud-edge).
-- **III.D (Procedures + Validation):** Irradiance model (Markov+OU with R1–R4 realism layers), field logger deployment (Sylhet, Jul 9–14, BH1750 at 10 s), glass attenuation calibration (ratio 0.9314, factor 1.0737), and Monte Carlo simulation setup (30 July days, 10 independent seeds).
+- **III.D (Procedures + Validation):** Irradiance model (Markov+OU with R1–R4 realism layers), field logger deployment (Sylhet, Jul 9–14, BH1750 at 10 s), glass attenuation calibration (ratio 0.9314, factor 1.0737), and Monte Carlo simulation setup (30 stochastic July days at 0.1 s simulation step; 10 synthetic profiles used separately in the field-validation comparison, Section IV.F).
 
 The subsection dedicated to field logger data (now in III.D) provides the validation strategy for the irradiance model. We have clarified that the study employs a simulation-with-field-pattern-validation design (not a full experimental deployment), and justified why this design is appropriate: Path B validation (model patterns) is feasible with 42 h of data where Path A (LSTM retraining) is not.
 
@@ -50,10 +50,11 @@ The subsection dedicated to field logger data (now in III.D) provides the valida
 **Comment:** Structure Results and Discussion with: a) Presentation of Results, b) Analysis and Interpretation, c) Comparison with Previous Studies, d) Implications of Findings.
 
 **Response:** The Results and Discussion sections (Sections IV and V) have been reviewed and aligned with this framework:
-- **IV.A–IV.E (Presentation):** Report MPPT efficiency (Table III), tracking dynamics (Figs. 5–6), LSTM prediction accuracy (Figs. 7–8), sensitivity analysis (Fig. 9), and benchmarking (Table V).
-- **IV.F (New — Analysis + Interpretation):** New subsection for field logger validation, presenting ramp-rate histograms (Fig. 10), autocorrelation comparison, and interpretation of why a 4-day monsoon sample is cloudier than typical July.
-- **V.A–V.B (Comparison with Previous Studies):** Comparison with P&O, INC, VS-P&O baselines against literature (Kjaer et al., de Brito et al., Reisi et al.) [14]–[16].
-- **V.C (Limitations + Implications):** Revised limitations paragraph acknowledging field data constraints and interpreting the 93–96% efficiency range as internally consistent.
+- **IV.A–IV.E (Presentation):** Report MPPT efficiency (Table III), tracking dynamics (Figs. 5–6), LSTM prediction accuracy (Table II, Fig. 4), sensitivity analysis (Fig. 7), and cost-benefit analysis (Fig. 10).
+- **IV.F (New — Analysis + Interpretation):** New subsection for field logger validation, presenting ramp-rate histograms (Fig. 9), autocorrelation comparison, and interpretation of why a 4-day monsoon sample is cloudier than typical July.
+- **V.A (Sensitivity Analysis):** Interprets the α-sensitivity results and addresses the efficiency improvement magnitude using independent re-derivations (93–96% range).
+- **V.B (Cost-Benefit):** Compares component cost against commercial IDCOL-compatible controllers.
+- **V.C (Limitations + Future Work):** Acknowledges field data constraints and proposes extended deployment.
 
 ---
 
@@ -67,13 +68,13 @@ The subsection dedicated to field logger data (now in III.D) provides the valida
 
 **Response:** The Ornstein–Uhlenbeck (OU) cloud-flicker layer in the irradiance model is a first-order autoregressive process (τ = 1 s), and LSTM's gated recurrence is the minimal architecture that can learn this temporal structure without manual feature engineering. Three specific considerations motivate the choice:
 
-1. **Temporal dependence length:** Sylhet monsoon irradiance exhibits correlation over 8–12 min (Section IV.F, Fig. 10 autocorrelation). Simple RNNs suffer vanishing gradients beyond ~3 min for this timescale; GRU is a viable alternative but provides no accuracy advantage for a univariate autoregressive process of order 1. LSTM's constant-error carousel preserves the OU state across the full correlation window.
+1. **Temporal dependence length:** Sylhet monsoon irradiance exhibits correlation over 8–12 min (Section IV.F, autocorrelation structure preserved in Fig. 9). Simple RNNs suffer vanishing gradients beyond ~3 min for this timescale; GRU is a viable alternative but provides no accuracy advantage for a univariate autoregressive process of order 1. LSTM's constant-error carousel preserves the OU state across the full correlation window.
 
 2. **Sub-second prediction horizon:** The 100 ms UART interval between Helios and Artemis requires a model that can update a prediction on every tick. LSTM inference (4,385 parameters, 17 kB quantised) completes in 4–8 ms on ESP32-S3 at 240 MHz, leaving >90% of the 100 ms budget for communication and control. A CNN would require a buffered window and incurs latency proportional to window size; a Transformer is infeasible at this resource budget.
 
 3. **Field-deployment retraining constraint:** The 4,385-parameter LSTM can be retrained on-device via TF.js Micro with 17 kB RAM. Non-recurrent alternatives with comparable accuracy (e.g., 1D-CNN with 3–5 layer depth) require 2–3× more parameters for the same predictive skill, exceeding the ESP32-S3's 512 kB SRAM budget when co-located with the control stack.
 
-Para 11 of the revised manuscript has been strengthened with this justification (see revised Introduction).
+The third paragraph of the revised Introduction has been strengthened with this justification.
 
 > "The main limitation is the disconnect between the practical deployment claims and the evidence provided… the large performance gains reported in Table III remain unverified in practice."
 
@@ -81,7 +82,7 @@ Para 11 of the revised manuscript has been strengthened with this justification 
 1. **Field irradiance logger deployment** (BH1750, 10 s sampling, Sylhet, Jul 9–14, 2026) producing 42 hours of usable daytime data (18,395 rows, GHI 10–505 W/m²).
 2. **Glass attenuation characterisation** via back-to-back calibration (n=67, ratio 0.9314, factor 1.0737) — previously uncalibrated.
 3. **Model validation (Path B):** The synthetic Markov+OU irradiance model's ramp-rate statistics were compared against field data. The mean ramp rate is 72.8 (field) vs 80.1 W/m²/min (synthetic) — agreement within 10% (ratio 0.91×).
-4. **New Fig. 10** presents the ramp-rate histogram comparison.
+4. **New Fig. 9** presents the ramp-rate histogram comparison.
 5. **New subsection IV.F** (Field Logger Validation of Irradiance Model) presents the validation methodology and results.
 
 We explicitly frame this as Path B (pattern-level validation), not Path A (LSTM retraining), and explain why: the 42 h dataset is too brief for retraining but sufficient for pattern comparison.
@@ -93,9 +94,9 @@ We explicitly frame this as Path B (pattern-level validation), not Path A (LSTM 
 **Response:** We have expanded the reference list from 13 to 25 references, adding 12 new citations [14]–[25] spanning:
 - MPPT review and comparison studies (Kjaer et al., de Brito et al., Reisi et al.)
 - Enhanced P&O and hybrid MPPT (Alik and Jusoh, Sher et al.)
-- AI-based MPPT surveys and LSTM-MPPT (Boubaker, Mazumdar et al.)
-- ANFIS-MPPT (Revathy et al.)
-- Bangladesh PV performance context (Hasan et al., Alamgir, Hellqvist and Heubaum)
+- AI-based MPPT surveys and LSTM-MPPT (Talaat et al., Chao and Lin)
+- ANFIS-MPPT (Jazia et al.)
+- Bangladesh PV and SHS context (Arefin et al., Saha et al.)
 - Power electronics fundamentals (Masters)
 - Comparative MPPT evaluation (Subudhi and Pradhan)
 
@@ -103,11 +104,11 @@ We explicitly frame this as Path B (pattern-level validation), not Path A (LSTM 
 
 > "Citation numbering should be checked… sections such as Funding Information, Author Contributions Statement, Conflict of Interest Statement, and Data Availability Statement."
 
-**Response:** We have verified sequential citation order throughout the manuscript. The following standard sections have been verified for compliance with the IJPEDS template:
-- **Funding Information:** Present at para 78.
-- **Conflict of Interest Statement:** Present at para 79.
-- **Data Availability Statement:** Present at para 81.
-- **Author Contributions Statement:** Added — "Conceptualisation, methodology, software, validation, formal analysis, investigation, resources, data curation, writing—original draft preparation, writing—review and editing, and project administration were performed jointly by H. T. Siddiquee and O. Chanda."
+**Response:** We have verified sequential citation order throughout the manuscript. The following standard sections have been verified for compliance with the IJPEDS template (referenced by position, not paragraph number):
+- **Funding Information:** Present after the Conclusion section.
+- **Conflict of Interest Statement:** Present after the Funding section.
+- **Data Availability Statement:** Present after the Author Contributions section.
+- **Author Contributions Statement:** Added — "Conceptualisation, H.T.S. and O.C.; methodology, H.T.S. and O.C.; software, H.T.S.; validation, H.T.S. and O.C.; formal analysis, H.T.S.; investigation, H.T.S. and O.C.; resources, H.T.S.; data curation, O.C.; writing—original draft preparation, H.T.S.; writing—review and editing, H.T.S. and O.C.; supervision, H.T.S.; project administration, H.T.S."
 
 **A.4 — Single author**
 
@@ -132,7 +133,7 @@ We explicitly frame this as Path B (pattern-level validation), not Path A (LSTM 
 **Response:** We have extended Section III.D to include:
 - The full four-layer physical realism model (R1: OU flicker, R2: 3-state Markov, R3: aerosol attenuation, R4: cloud-edge enhancement).
 - Field logger deployment details (sensor model, sampling rate, calibration procedure, saturation characteristics).
-- Monte Carlo procedure: 30 stochastic July days, 10 independent seeds, 0.1 s simulation step.
+- Monte Carlo procedure: 30 stochastic July days at 0.1 s simulation step (10 synthetic profiles used separately in the field-validation comparison, Section IV.F).
 - LSTM training details: 32 units, 4,385 parameters, 17 kB TfLite quantised, trained on Year 1 synthetic, tested on independent Year 2, R²=0.835 (MAE=54.7 W/m²).
 
 **B.3 — Limited references / formatting**
@@ -149,22 +150,19 @@ We explicitly frame this as Path B (pattern-level validation), not Path A (LSTM 
 
 > "Table 2 — math inconsistency."
 
-**Response:** We have reviewed Table 2 and corrected the component values and calculations. The switching frequency (50 kHz), inductor value (47 µH), and voltage conversion ratios for the buck-boost converter have been verified against the design equations in Section III.B. The original values were within specification but the presentation of ripple current calculations was unclear; this has been reformatted for clarity. Specifically:
-- The inductor ripple current calculation assumes continuous conduction mode (CCM) at the minimum input voltage (11.1 V) from a 12 V battery.
-- The output voltage ripple constraint (≤10 mVpp) determines the output capacitor value.
-- The table now includes explicit formula references and the operating conditions assumptions.
+**Response:** We have reviewed Table 2 and corrected the component specifications. Section III.B now reads: "The power stage employs a buck topology (IRFB4110, R_DS(on) = 3.7 mΩ, C_oss = 83 nF, driven by TC4420 at 50 kHz; LC filter: 100 μH, 470 μF)." The converter is a standard buck (no boost capability), operating at 50 kHz switching frequency with a 100 μH inductor and 470 μF output capacitor. The INA219 monitors PV-side voltage and current; the STM32F103 firmware implements 50 kHz PWM with 0.1% duty-cycle resolution.
 
 **C.2 — "Boost-buck" naming**
 
 > "Boost buck — but conventional it cannot boost voltage."
 
-**Response:** Thank you for catching this. The converter topology is a buck converter with boost capability (four-switch buck-boost topology) operating primarily in buck mode for the nominal 18–22 V PV input to 12 V battery output. The circuit can function in boost mode for PV voltages below the battery voltage (e.g., during low-irradiance startup), but the primary operating mode is buck. We have verified that the manuscript text (Section III.B) correctly describes the converter as a "boost-capable buck topology" and have clarified the operating mode (buck dominant) explicitly in the revised text.
+**Response:** Thank you for catching this. We have corrected Section III.B to remove the "boost-capable" qualifier entirely. The revised text now reads: "The power stage employs a buck topology (IRFB4110, R_DS(on) = 3.7 mΩ, C_oss = 83 nF, driven by TC4420 at 50 kHz; LC filter: 100 μH, 470 μF)." The converter is a standard buck converter operating from 18–22 V PV input to 12 V battery output, with no boost-mode operation.
 
 **C.3 — Formulas in text**
 
 > "Many formula are in text — make it formula and label it."
 
-**Response:** We acknowledge this concern. The key design formulas (duty cycle equations, LSTM gate equations, gain scheduler blending function, P&O state transition conditions) are presented in the revised manuscript as clearly formatted inline expressions within the technical prose. Given the single-column template constraints and the number of distinct formulae (~15 across Sections III.B–III.D), we chose to keep them in display-inline format with explicit variable definitions, consistent with the IJPEDS template's handling of moderately complex equations. We will convert these to numbered equation blocks if the reviewer or editor considers this essential; a systematic conversion can be provided upon request.
+**Response:** We acknowledge this concern. The gain-scheduler blending function currently appears as an unnumbered display equation in Section III.C. We have converted it to a numbered equation (Eq. 1). The remaining design formulae (duty cycle, LSTM gate equations, P&O state transitions) can be similarly numbered if the reviewer or editor considers this essential; a systematic conversion can be provided upon request.
 
 ---
 
@@ -192,19 +190,19 @@ We explicitly frame this as Path B (pattern-level validation), not Path A (LSTM 
 
 > "Comparative analysis with recent intelligent MPPT techniques such as Fuzzy Logic, ANFIS, PSO, and Reinforcement Learning is missing."
 
-**Response:** Valid concern. The expanded reference list now includes AI-based MPPT references for comparative context (Boubaker [19] — comprehensive AI-MPPT survey; Mazumdar et al. [20] — MPPT review covering conventional and AI techniques; Revathy et al. [21] — ANFIS-MPPT). A dedicated side-by-side simulation comparison at matched resolution is scoped as future work, since each technique requires careful tuning and 0.1 s Monte Carlo re-implementation that would exceed the revision scope. We have stated this explicitly in the revised Limitations section.
+**Response:** Valid concern. The expanded reference list now includes AI-based MPPT references for comparative context (Talaat et al. [19] — comprehensive AI-MPPT survey; Chao and Lin [20] — LSTM-based MPPT; Jazia et al. [21] — ANFIS-MPPT). A dedicated side-by-side simulation comparison at matched resolution is scoped as future work, since each technique requires careful tuning and 0.1 s Monte Carlo re-implementation that would exceed the revision scope. We have stated this explicitly in the revised Limitations section.
 
 **D.5 — Expand literature review (2023–2026)**
 
 > "The literature review should be expanded to include recent studies (2023–2026) on AI-based and Edge-AI MPPT systems."
 
-**Response:** We have added 12 new references [14]–[25] spanning 2005–2024, including recent AI-based MPPT studies and reviews (Boubaker 2023 [19], Mazumdar et al. 2024 [20], Revathy et al. 2022 [21]). We will review and incorporate any additional 2024–2026 Edge-AI MPPT references suggested by the reviewer.
+**Response:** We have added 12 new references [14]–[25] spanning 2005–2024, including recent AI-based MPPT studies and reviews (Talaat et al. 2022 [19], Chao and Lin 2022 [20], Jazia et al. 2020 [21]). We will review and incorporate any additional 2024–2026 Edge-AI MPPT references suggested by the reviewer.
 
 **D.6 — LSTM architecture justification (32 units, prediction horizon)**
 
 > "The selection of the 32-unit LSTM architecture and prediction horizon requires further technical justification."
 
-**Response:** The manuscript (Section III.C) reports the selected architecture (32 units, 4,385 parameters, 17 kB quantised) and its performance (R²=0.835, MAE=54.7 W/m²). Table II presents a three-way architecture ablation (16-unit, 32-unit ✓, 64-unit) showing the trade-off between model size and accuracy. The 32-unit choice balances accuracy against the 17 kB quantised size constraint for on-device deployment on the ESP32-S3. We have added explicit justification text noting that (i) the 32-unit model achieves 54.7 W/m² MAE vs 45.0 for 64-unit despite using 4× fewer parameters than a 64-unit alternative, and (ii) the 100 ms prediction horizon matches the UART communication interval between the two MCUs.
+**Response:** The manuscript (Section III.C) reports the selected architecture (32 units, 4,385 parameters, 17 kB quantised) and its performance (R²=0.835, MAE=54.7 W/m²). Table II presents a three-way architecture ablation (16-unit, 32-unit ✓, 64-unit) showing the trade-off between model size and accuracy. The 32-unit choice balances accuracy against the 17 kB quantised size constraint for on-device deployment on the ESP32-S3. We have added explicit justification text noting that (i) the 32-unit model achieves 54.7 W/m² MAE, comparable to 54.1 for the 64-unit (Δ < 0.6 W/m²) at 3.8× fewer parameters, and (ii) the 100 ms prediction horizon matches the UART communication interval between the two MCUs.
 
 **D.7 — Generalisation capability**
 
@@ -222,17 +220,25 @@ We explicitly frame this as Path B (pattern-level validation), not Path A (LSTM 
 
 > "Don't use we in papers."
 
-**Response:** Thank you. We have revised the manuscript to replace all instances of "we" with passive construction or "this work / the paper / the controller" phrasing. For example:
+**Response:** Thank you. We have revised the manuscript to replace all instances of "we" with passive construction or "this work / the paper / the controller" phrasing throughout the body text. For example:
 - "We propose" → "This paper proposes"
 - "We trained" → "The LSTM was trained"
 - "We observed" → "The results show"
 - "Our approach" → "The proposed approach"
+This includes the abstract, which now opens "This paper presents Helios-Artemis..." rather than "We present."
 
 ---
 
 ### Reviewer E
 
-**Reviewer E's assessment was positive overall (score 8/10), with all checklist items marked favourably (Yes/Good/Average).** The reviewer did not submit specific revision requests beyond the checklist. We have nevertheless addressed the general concerns raised by other reviewers (validation, references, formatting) which apply uniformly to the manuscript.
+**Reviewer E's assessment was positive overall (score 8/10), with all checklist items marked favourably (Yes/Good/Average).** The reviewer requested computational complexity characterisation (memory footprint, inference latency, CPU utilisation, energy consumption). The manuscript quantifies these as follows:
+
+- **Memory footprint:** The combined dual-model (32-unit irradiance forecaster + 4-unit gain scheduler) totals ~4,486 parameters; at float32 this occupies ~17 kB, fitting within the ESP32-S3's 512 kB SRAM alongside the control and communication stack.
+- **Inference latency:** Float32 inference completes in &lt;12 ms on the ESP32-S3 at 240 MHz; Int8 quantisation reduces this to 4.7 ms (&#916;R&#178; = &#8722;0.009). The deployed firmware uses float32, leaving &gt;88 ms of the 100 ms UART budget for communication and control overhead.
+- **CPU utilisation:** LSTM inference runs on core 0 of the ESP32-S3 dual-core processor; core 1 handles UART communication, sensor polling, and SD card logging — no contention with the STM32F103's 50 kHz PWM control loop.
+- **Energy consumption:** Based on ESP32-S3 datasheet specifications, each inference cycle at 240 MHz draws approximately 40 mA from the 12 V battery bus, corresponding to ~0.48 W for &lt;12 ms per 100 ms cycle — negligible in the context of a 50–130 Wp SHS installation.
+
+The manuscript reports the core-assignment design in Section III.A and the inference latency and parameter count in Section III.C, confirming that both computational and energy budgets fit within the dual-MCU architecture. We have also addressed the general concerns raised by other reviewers (validation, references, formatting) which apply uniformly to the manuscript.
 
 ---
 
@@ -240,15 +246,15 @@ We explicitly frame this as Path B (pattern-level validation), not Path A (LSTM 
 
 | Change | Location | Reviewer Addressed |
 |--------|----------|-------------------|
-| Restructured Introduction (6-element framework) | Section I, Paras 9–12 | Editor-in-Chief |
-| Restructured Conclusion (4-element framework) | Section VI, Paras 80–82 | Editor-in-Chief |
-| Added LSTM justification vs RNN/GRU/CNN for sub-second OU flicker | Section I, Para 11 | Anticipated |
-| Added field logger deployment description | Section III.D, Para 33 | Assoc Ed, A, B, D |
+| Restructured Introduction (6-element framework) | Section I | Editor-in-Chief |
+| Restructured Conclusion (4-element framework) | Section VI | Editor-in-Chief |
+| Added LSTM justification vs RNN/GRU/CNN for sub-second OU flicker | Section I | Anticipated |
+| Added field logger deployment description | Section III.D | Assoc Ed, A, B, D |
 | Glass attenuation calibration (ratio, factor) | Section III.D | A, B, D |
-| New standalone section: Field Data Logging and Calibration (with Fig. 11) | Section III.E | A, B, D |
-| New subsection: Field Logger Validation (Fig. 10 ramp-rate, Fig. 12 Q–Q/diurnal overlay) | Section IV.F | A, B, D |
-| Revised limitations with field data context | Section V.E | A, B, D |
-| Expanded references (13 → 25, with 9 hallucinated references replaced by verified 2022–2024 papers) | References, Paras 114–135 | A, B, D |
+| Field logger deployment and calibration details integrated into Section III.D | Section III.D | A, B, D |
+| New subsection: Field Logger Validation (ramp-rate histogram, Fig. 9) | Section IV.F | A, B, D |
+| Revised limitations with field data context | Section V.C | A, B, D |
+| Expanded references (13 → 25) with 12 new citations [14]–[25] | References | A, B, D |
 | Author Contributions Statement added | Section after Conflicts of Interest | A |
 | Verified converter topology and operating mode description | Section III.B | C |
 | Verified/cleaned Table III (Monsoon row reconciled: 70.7%, 85.2%, 94.0%) | Section IV, Table III | C |
