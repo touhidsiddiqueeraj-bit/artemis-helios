@@ -3,3 +3,9 @@ __pycache__/
 *.fig
 *.docx
 *.pptx
+~$*
+*.png
+*.pdf
+*.svg
+*.zip
+models/

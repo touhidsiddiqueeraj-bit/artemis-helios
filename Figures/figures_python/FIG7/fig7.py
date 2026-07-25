@@ -21,11 +21,12 @@ plt.rcParams.update({
     'savefig.bbox':'tight','savefig.pad_inches':0.04,
 })
 
+np.random.seed(23)
 C1,C2 = 3.5, 7.16
 B,R,G,O,P,GR = '#1565C0','#C62828','#2E7D32','#E65100','#6A1B9A','#546E7A'
 
 def fig7():
-    fig,(a1,a2,a3)=plt.subplots(1,3,figsize=(C2,2.7))
+    fig,(a1,a2,a3)=plt.subplots(3,1,figsize=(C2,6.0),gridspec_kw={'hspace':0.5})
     Gv=500; k=14.2606; VocT=21.6*(1-3.4e-3*(35+(45-20)/800*Gv-25-25))
     IscT=2.91*(1+0.5e-3*(35+(45-20)/800*Gv-25-25))*Gv/1000
     dT=(35+(45-20)/800*Gv)-25; VocT=21.6*(1-3.4e-3*dT); IscT=2.91*(1+0.5e-3*dT)*Gv/1000

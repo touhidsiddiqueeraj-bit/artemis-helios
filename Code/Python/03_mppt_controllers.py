@@ -19,8 +19,7 @@ Reference: Sections III-B, IV-B, V and Table III of the paper.
 """
 
 import numpy as np
-from dataclasses import dataclass, field
-from typing import Optional
+from dataclasses import dataclass
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -243,16 +242,16 @@ class LSTMAssistedPaO:
     Equation (1):
         V_ref_new = (1 - α) · V_ref_P&O + α · V_MPP_pred
 
-    Blend is applied only when |G_pred - G| > 5% of G_pred
+    Blend is applied only when |G_pred - G| > 15% of G_pred
     to suppress spurious perturbations during stable periods.
 
     V_MPP_pred is retrieved from a single-diode lookup table.
-    α = 0.35 (stable operating region [0.28, 0.55], Section IV-C).
+    α = 0.35 (stable operating region [0.20, 0.55], Section IV-C).
     """
     def __init__(self, alpha: float = 0.35, V_init: float = 17.0,
                  k: float = 0.005, delta_min: float = 0.05,
                  delta_max: float = 0.80,
-                 blend_threshold: float = 0.05):
+                 blend_threshold: float = 0.15):
         self.alpha     = alpha
         self.blend_thr = blend_threshold
         self.po = VariableStepPaO(V_init=V_init, k=k,

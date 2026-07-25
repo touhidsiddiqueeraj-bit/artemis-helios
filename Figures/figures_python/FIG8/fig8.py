@@ -25,10 +25,11 @@ C1,C2 = 3.5, 7.16
 B,R,G,O,P,GR = '#1565C0','#C62828','#2E7D32','#E65100','#6A1B9A','#546E7A'
 
 def fig8():
-    fig,(a1,a2)=plt.subplots(1,2,figsize=(C2,2.9))
+    fig,(a1,a2)=plt.subplots(2,1,figsize=(C2,5.0),gridspec_kw={'hspace':0.4})
     comps={'ESP32-S3\nModule':380,'STM32F103\nBlue Pill':120,'INA219':80,
-           'GY302':120,'Buck Stage\n(passives)':350,'PCB+Housing':280,'Misc':170}
-    cols_=[B,'#5C6BC0',G,O,R,'#795548','#607D8B']
+           'GY302':120,'Buck Stage\n(passives)':350,'PCB+Housing':280,'Misc':170,
+           'SMT Assembly\n(est.)':250}
+    cols_=[B,'#5C6BC0',G,O,R,'#795548','#607D8B','#4DB6AC']
     vs=list(comps.values()); tot=sum(vs)
     w,_,atx=a1.pie(vs,labels=None,autopct='%1.0f%%',colors=cols_,startangle=90,
                     wedgeprops=dict(edgecolor='white',lw=0.6),pctdistance=0.78,

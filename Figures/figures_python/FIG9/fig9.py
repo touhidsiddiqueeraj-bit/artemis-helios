@@ -25,7 +25,7 @@ C1,C2 = 3.5, 7.16
 B,R,G,O,P,GR = '#1565C0','#C62828','#2E7D32','#E65100','#6A1B9A','#546E7A'
 
 def fig9():
-    fig,(a1,a2)=plt.subplots(1,2,figsize=(C2,2.9))
+    fig,(a1,a2)=plt.subplots(2,1,figsize=(C2,5.0),gridspec_kw={'hspace':0.4})
     mn=np.arange(1,13); mn_n='Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec'.split()
     hoss=[82,83,85,86,84,80,79,81,83,85,84,82]
     ours=[89,90,92,93,91,88,94,91,92,93,91,90]

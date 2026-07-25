@@ -1,0 +1,5 @@
+Controller,Mean η (%),Std η (%)
+Plain P&O,98.44,0.05
+VS-P&O,95.76,0.1
+INC,98.78,0.05
+LSTM-P&O,95.75,0.06

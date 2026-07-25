@@ -54,7 +54,7 @@ def fig1():
         if lbl: ax.text((x1+x2)/2,(y1+y2)/2+lo,lbl,ha='center',fontsize=5.8,color=col,style='italic')
 
     box(0.1,4.2,1.4,1.1,'PV Panel','50Wp Mono-Si',fc='#FFF9C4',ec='#F9A825')
-    box(1.85,4.2,1.5,1.1,'Buck Conv.','IRFZ44N+TC4420\n50 kHz',fc='#FCE4EC',ec=R)
+    box(1.85,4.2,1.5,1.1,'Buck Conv.','IRFB4110+TC4420\n50 kHz',fc='#FCE4EC',ec=R)
     box(3.65,4.2,1.3,1.1,'Battery','12V/7Ah SLA',fc='#E8F5E9',ec=G)
     box(5.25,4.2,1.2,1.1,'Load','DC Output',fc='#F1F8E9',ec='#558B2F')
     box(1.75,0.4,1.7,2.8,'ARTEMIS','STM32F103\nVS-P&O MPPT\nCC/CV\nINA219',fc='#EDE7F6',ec='#4527A0')
@@ -98,13 +98,13 @@ def fig2():
     axes[0].legend(); axes[0].grid(True)
     axes[0].set_title('(a) Full-day Sylhet Markov+OU irradiance — July (3-state: overcast/partly/clear)')
     m=(th>=9.5)&(th<=11.5)
-    axes[1].plot(th[m],GG[m],color=B,lw=0.55,label='GHI with sub-second flicker (τ=1s, σ=25%)')
+    axes[1].plot(th[m],GG[m],color=B,lw=0.55,label='GHI with OU flicker (τ=1s, σ=25%)')
     axes[1].plot(th[m],Ge[m],'r--',lw=0.9,label='Clear-sky')
     axes[1].fill_between(th[m],GG[m],alpha=0.22,color=B)
     axes[1].set_xlabel('Time (h)'); axes[1].set_ylabel('GHI (W m⁻²)')
-    axes[1].set_title('(b) Zoom 09:30–11:30 h — sub-second irradiance flicker visible (Lave & Kleissl 2010)')
+    axes[1].set_title('(b) Zoom 09:30–11:30 h — sub-second OU flicker visible (Lave & Kleissl 2010)')
     axes[1].legend(); axes[1].grid(True)
-    fig.suptitle('Fig. 2.  Calibrated Sylhet irradiance model (Markov 15s state, sub-second flicker, aerosol attenuation)',fontsize=8.5,fontweight='bold')
+    fig.suptitle('Fig. 2.  Calibrated Sylhet irradiance model (Markov 15s state, OU flicker, aerosol attenuation)',fontsize=8.5,fontweight='bold')
     fig.tight_layout(); fig.savefig(f'{OUT}/fig2_irradiance.png'); plt.close(); print('[OK] Fig 2')
 
 # ── FIG 3: I-V / P-V curves ─────────────────────────────────────────────────
@@ -167,7 +167,7 @@ def fig4():
     a4.legend(fontsize=6.5); a4.grid(True); a4.set_ylim(88,97)
     a4.set_title('(d) α sensitivity analysis')
 
-    fig.suptitle(f'Fig. 4.  LSTM irradiance predictor performance (R²=0.917, MAE=50.7 W m⁻², Year-2 test)',fontsize=8.5,fontweight='bold')
+    fig.suptitle(f'Fig. 4.  LSTM irradiance predictor performance (R²={r2:.3f}, MAE={mae:.1f} W m⁻², Year-2 test)',fontsize=8.5,fontweight='bold')
     fig.tight_layout(); fig.savefig(f'{OUT}/fig4_lstm.png'); plt.close(); print('[OK] Fig 4')
 
 # ── FIG 5: Full-day simulation ───────────────────────────────────────────────
