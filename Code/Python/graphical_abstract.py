@@ -39,7 +39,7 @@ fig.text(0.50, 0.935,
          'Helios-Artemis: Dual-MCU Predictive MPPT for Bangladesh Solar Home Systems',
          ha='center', va='center', fontsize=12.5, fontweight='bold', color=WHITE)
 fig.text(0.50, 0.895,
-         'LSTM Irradiance Prediction  ·  Variable-Step P&O  ·  94.0 ± 0.6% Tracking Efficiency  ·  ~1,500 BDT',
+         'LSTM Irradiance Prediction  ·  Variable-Step P&O  ·  94.0 ± 0.6% Tracking Efficiency  ·  ~1,750 BDT',
          ha='center', va='center', fontsize=9, color=TEAL)
 
 def panel_bg(ax, color=PANEL):
@@ -151,7 +151,7 @@ metrics=[
     ('95% CI',           '[92.9, 94.9]%',   LBLUE),
     ('LSTM R²',          '0.917',           AMBER),
     ('LSTM MAE',         '50.7 W m⁻²',      AMBER),
-    ('System Cost',      '~1,500 BDT',      GREEN),
+    ('System Cost',      '~1,750 BDT',      GREEN),
     ('vs IDCOL MPPT',    '↓ 89%',           '#EF5350'),
     ('UART Latency',     '100 ms',          LBLUE),
     ('Retrain Time',     '24 h on-device',  LBLUE),

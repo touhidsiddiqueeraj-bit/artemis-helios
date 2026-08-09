@@ -45,32 +45,30 @@ def fig1():
     def box(x,y,w,h,t,sub='',fc='#E3F2FD',ec='#1565C0'):
         ax.add_patch(FancyBboxPatch((x,y),w,h,boxstyle='round,pad=0.07',fc=fc,ec=ec,lw=0.9,zorder=2))
         yo=0.18 if sub else 0
-        ax.text(x+w/2,y+h/2+yo,t,ha='center',va='center',fontsize=7.5,fontweight='bold',color='#111',zorder=3)
-        if sub: ax.text(x+w/2,y+h/2-0.25,sub,ha='center',va='center',fontsize=5.6,color='#444',zorder=3)
+        ax.text(x+w/2,y+h/2+yo,t,ha='center',va='center',fontsize=9,fontweight='bold',color='#111',zorder=3)
+        if sub: ax.text(x+w/2,y+h/2-0.25,sub,ha='center',va='center',fontsize=7,fontweight='bold',color='#333',zorder=3)
     def arr(x1,y1,x2,y2,lbl='',col='#333',bi=False,lo=0.13):
         sty='<->' if bi else '->'
         ax.annotate('',xy=(x2,y2),xytext=(x1,y1),
                     arrowprops=dict(arrowstyle=sty,color=col,lw=0.9),zorder=4)
-        if lbl: ax.text((x1+x2)/2,(y1+y2)/2+lo,lbl,ha='center',fontsize=5.8,color=col,style='italic')
+        if lbl: ax.text((x1+x2)/2,(y1+y2)/2+lo,lbl,ha='center',fontsize=7,color=col,style='italic')
 
     box(0.1,4.2,1.4,1.1,'PV Panel','50Wp Mono-Si',fc='#FFF9C4',ec='#F9A825')
     box(1.85,4.2,1.5,1.1,'Buck Conv.','IRFB4110+TC4420\n50 kHz',fc='#FCE4EC',ec=R)
     box(3.65,4.2,1.3,1.1,'Battery','12V/7Ah SLA',fc='#E8F5E9',ec=G)
     box(5.25,4.2,1.2,1.1,'Load','DC Output',fc='#F1F8E9',ec='#558B2F')
     box(1.75,0.4,1.7,2.8,'ARTEMIS','STM32F103\nVS-P&O MPPT\nCC/CV\nINA219',fc='#EDE7F6',ec='#4527A0')
-    box(5.1,0.4,2.4,4.9,'HELIOS','ESP32-S3\nDual LSTM\n(irradiance + gain)\nTF.js Retrain\nSD Logging\nWeb Dashboard\nZero Cloud Dep.',fc='#E3F2FD',ec=B)
+    box(7.0,0.4,2.6,4.9,'HELIOS','ESP32-S3\nDual LSTM\n(irradiance + gain)\nTF.js Retrain\nSD Logging\nWeb Dashboard\nZero Cloud Dep.',fc='#E3F2FD',ec=B)
     box(0.1,0.4,1.3,2.8,'Sensors','GY302\nOV2640\nINA219\nSD Card',fc='#FFF3E0',ec=O)
 
     arr(1.5,4.75,1.85,4.75,'Vin,Iin')
     arr(3.35,4.75,3.65,4.75,'Vbat,Ibat')
     arr(4.95,4.75,5.25,4.75)
-    arr(0.75,3.2,0.75,3.2); arr(1.05,2.05,1.75,2.05,'raw sensor data')
-    arr(3.45,1.75,3.45,3.9,'Vref',lo=0.18)
-    ax.annotate('',xy=(5.1,3.5),xytext=(3.45,3.5),
+    arr(1.4,2.05,1.75,2.05,'raw sensor data')
+    arr(3.6,1.75,3.6,3.9,'Vref',lo=0.18)
+    ax.annotate('',xy=(7.0,3.5),xytext=(3.6,3.5),
                 arrowprops=dict(arrowstyle='<->',color=P,lw=1.1),zorder=4)
-    ax.text(4.28,3.75,'UART 100 ms\n(Vref_pred)',ha='center',fontsize=6,color=P,fontweight='bold')
-
-    ax.set_title('Fig. 1.  Helios-Artemis dual-MCU predictive MPPT — system architecture',fontsize=9,fontweight='bold',pad=5)
+    ax.text(5.3,3.75,'UART 100 ms\n(Vref_pred)',ha='center',fontsize=7.5,color=P,fontweight='bold')
     fig.savefig(f'{OUT}/fig1_architecture.png'); plt.close(); print('[OK] Fig 1')
 
 # ── FIG 2: Irradiance model ─────────────────────────────────────────────────
@@ -104,7 +102,6 @@ def fig2():
     axes[1].set_xlabel('Time (h)'); axes[1].set_ylabel('GHI (W m⁻²)')
     axes[1].set_title('(b) Zoom 09:30–11:30 h — sub-second OU flicker visible (Lave & Kleissl 2010)')
     axes[1].legend(); axes[1].grid(True)
-    fig.suptitle('Fig. 2.  Calibrated Sylhet irradiance model (Markov 15s state, OU flicker, aerosol attenuation)',fontsize=8.5,fontweight='bold')
     fig.tight_layout(); fig.savefig(f'{OUT}/fig2_irradiance.png'); plt.close(); print('[OK] Fig 2')
 
 # ── FIG 3: I-V / P-V curves ─────────────────────────────────────────────────
@@ -126,7 +123,6 @@ def fig3():
     a2.set_xlabel('Voltage (V)'); a2.set_ylabel('Power (W)')
     a2.set_title('(b) P–V — Vmp from exact dP/dV=0\n(analytical solution, k=14.26)')
     a2.legend(fontsize=6.5,title='Peak powers'); a2.grid(True); a2.set_xlim(0,22)
-    fig.suptitle('Fig. 3.  PV model I–V and P–V characteristics (50Wp mono-Si, Isc₀=2.91A post-soiling)',fontsize=8.5,fontweight='bold')
     fig.tight_layout(); fig.savefig(f'{OUT}/fig3_iv_curves.png'); plt.close(); print('[OK] Fig 3')
 
 # ── FIG 4: LSTM performance ─────────────────────────────────────────────────
@@ -144,19 +140,19 @@ def fig4():
     a1.plot(t,act,color=B,lw=0.55,label='Measured GHI',alpha=0.85)
     a1.plot(t,pred,color=R,lw=0.8,ls='--',label='LSTM predicted (30-min ahead)')
     a1.set_xlabel('Time (min)'); a1.set_ylabel('GHI (W m⁻²)')
-    a1.legend(); a1.grid(True); a1.set_title(f'(a) Prediction timeseries — R²={r2:.3f}, MAE={mae:.1f}')
+    a1.legend(fontsize=8); a1.grid(True); a1.set_title(f'(a) Prediction timeseries — R²={r2:.3f}, MAE={mae:.1f}')
 
     a2.scatter(act,pred,alpha=0.12,s=4,color=B)
     a2.plot([0,740],[0,740],'r--',lw=0.8,label='1:1'); a2.set_xlim(0,750); a2.set_ylim(0,750)
     a2.text(30,650,f'R²={r2:.3f}\nMAE={mae:.1f} W m⁻²\nRMSE={rmse:.1f} W m⁻²',
-            fontsize=6.5,bbox=dict(boxstyle='round',fc='white',alpha=0.85))
+            fontsize=8,fontweight='bold',bbox=dict(boxstyle='round',fc='white',alpha=0.85))
     a2.set_xlabel('Measured (W m⁻²)'); a2.set_ylabel('Predicted (W m⁻²)')
-    a2.legend(); a2.grid(True); a2.set_title('(b) Scatter — independent Year-2 test set')
+    a2.legend(fontsize=8); a2.grid(True); a2.set_title('(b) Scatter — independent Year-2 test set')
 
     a3.hist(res,bins=45,color=B,alpha=0.65,density=True,edgecolor='white',lw=0.2)
     xr=np.linspace(-350,350,300); a3.plot(xr,norm.pdf(xr,res.mean(),res.std()),color=R,lw=1.0,label='Gaussian')
     a3.axvline(0,color='k',ls=':',lw=0.7); a3.set_xlabel('Residual (W m⁻²)'); a3.set_ylabel('Density')
-    a3.legend(); a3.grid(True); a3.set_title('(c) Residual distribution')
+    a3.legend(fontsize=8); a3.grid(True); a3.set_title('(c) Residual distribution')
 
     al=np.linspace(0.05,0.75,40)
     et=np.array([94.0-9.5*(a-0.35)**2+0.6*np.random.randn() for a in al])
@@ -164,10 +160,8 @@ def fig4():
     a4.axvline(0.35,color=R,ls='--',lw=0.8,label='α=0.35 (selected)')
     a4.axvspan(0.20,0.55,alpha=0.12,color=G,label='Stable plateau [0.20,0.55]')
     a4.set_xlabel('Blend weight α'); a4.set_ylabel('MPPT Efficiency (%)')
-    a4.legend(fontsize=6.5); a4.grid(True); a4.set_ylim(88,97)
+    a4.legend(fontsize=8); a4.grid(True); a4.set_ylim(88,97)
     a4.set_title('(d) α sensitivity analysis')
-
-    fig.suptitle(f'Fig. 4.  LSTM irradiance predictor performance (R²={r2:.3f}, MAE={mae:.1f} W m⁻², Year-2 test)',fontsize=8.5,fontweight='bold')
     fig.tight_layout(); fig.savefig(f'{OUT}/fig4_lstm.png'); plt.close(); print('[OK] Fig 4')
 
 # ── FIG 5: Full-day simulation ───────────────────────────────────────────────
@@ -215,7 +209,7 @@ def fig5():
 
     axs[0].fill_between(th,Gl,alpha=0.6,color=B); axs[0].plot(th,Gl,color=B,lw=lw_)
     axs[0].set_ylabel('GHI\n(W m⁻²)',fontsize=6.5); axs[0].set_ylim(0,800)
-    axs[0].text(0.99,0.88,'Peak: 744 W m⁻²',transform=axs[0].transAxes,fontsize=6,ha='right',color=R)
+    axs[0].text(0.99,0.88,'Peak: 744 W m⁻²',transform=axs[0].transAxes,fontsize=6,ha='right',color=R,fontweight='bold')
 
     axs[1].plot(th,Ppl,color=G,lw=lw_,label='P$_{pv}$')
     axs[1].plot(th,Pml,'--',color=R,lw=lw_+0.1,label='P$_{mpp}$')
@@ -224,30 +218,27 @@ def fig5():
     ep=el*100; ep[Gl<=80]=np.nan
     axs[2].plot(th,ep,color='#7B1FA2',lw=lw_); axs[2].set_ylim(0,105)
     axs[2].set_ylabel('η$_{MPPT}$\n(%)',fontsize=6.5)
-    axs[2].text(0.99,0.88,f'Mean: {eta:.1f}%',transform=axs[2].transAxes,fontsize=6,ha='right',color=P)
+    axs[2].text(0.99,0.88,f'Mean: {eta:.1f}%',transform=axs[2].transAxes,fontsize=6,ha='right',color=P,fontweight='bold')
 
     axs[3].plot(th,sl*100,color='k',lw=0.7); axs[3].set_ylim(0,105)
     axs[3].set_ylabel('SoC\n(%)',fontsize=6.5)
 
     axs[4].plot(th,vl,color=B,lw=0.6); axs[4].set_ylabel('V$_{bat}$\n(V)',fontsize=6.5)
-    axs[4].text(0.99,0.1,'12.41–13.61 V',transform=axs[4].transAxes,fontsize=6,ha='right')
+    axs[4].text(0.99,0.1,'12.41–13.61 V',transform=axs[4].transAxes,fontsize=6,ha='right',fontweight='bold')
 
     axs[5].plot(th,tl,color=R,lw=lw_); axs[5].set_ylabel('T$_J$\n(°C)',fontsize=6.5)
     axs[5].set_xlabel('Time (h)',fontsize=7)
-    axs[5].text(0.99,0.88,f'Peak: {max(tl):.1f}°C',transform=axs[5].transAxes,fontsize=6,ha='right',color=R)
+    axs[5].text(0.99,0.88,f'Peak: {max(tl):.1f}°C',transform=axs[5].transAxes,fontsize=6,ha='right',color=R,fontweight='bold')
 
     for ax in axs: ax.set_xlim(0,24); ax.grid(True,alpha=0.3); ax.tick_params(labelsize=6)
     for ax in axs[:-1]: ax.set_xticklabels([])
-    fig.suptitle(f'Fig. 5.  Full-day simulation — Sylhet July, seed 23\n'
-                 f'η={eta:.1f}%, Peak GHI=744 W m⁻², SoC: 45%→100%, Peak T$_J$={max(tl):.0f}°C',
-                 fontsize=8.5,fontweight='bold')
     fig.savefig(f'{OUT}/fig5_simulation.png'); plt.close(); print(f'[OK] Fig 5  [eff={eta:.1f}%]')
 
 # ── FIG 6: Comparison + MC ─────────────────────────────────────────────────
 def fig6():
     fig,(a1,a2)=plt.subplots(1,2,figsize=(C2,3.0))
     methods=['Plain P&O','VS-P&O\n(no LSTM)','Helios-Artemis\n(this work)']
-    mon=[70.7,85.2,94.0]; ann=[85.8,88.1,94.0]; x=np.arange(3); w=0.36
+    mon=[70.7,85.2,94.0]; ann=[85.8,89.1,91.3]; x=np.arange(3); w=0.36
     b1=a1.bar(x-w/2,mon,w,label='Monsoon July',color=B,alpha=0.85,edgecolor='white',lw=0.4)
     b2=a1.bar(x+w/2,ann,w,label='Annual equiv.',color=G,alpha=0.85,edgecolor='white',lw=0.4)
     a1.bar_label(b1,fmt='%.1f%%',fontsize=5.8,padding=2); a1.bar_label(b2,fmt='%.1f%%',fontsize=5.8,padding=2)
@@ -267,7 +258,6 @@ def fig6():
     a2.set_xlabel('MPPT Efficiency (%)'); a2.set_ylabel('Density')
     a2.legend(fontsize=6); a2.grid(True,alpha=0.35)
     a2.set_title(f'(b) 30-day Monte Carlo\nμ={mc.mean():.1f}%, σ={mc.std():.2f}%')
-    fig.suptitle('Fig. 6.  MPPT efficiency comparison and Monte Carlo distribution (N=30 days)',fontsize=8.5,fontweight='bold')
     fig.tight_layout(); fig.savefig(f'{OUT}/fig6_comparison.png'); plt.close(); print('[OK] Fig 6')
 
 # ── FIG 7: VS P&O convergence ──────────────────────────────────────────────
@@ -292,7 +282,7 @@ def fig7():
         tv.append(Vr); tp.append(max(0,IscT*(1-(Vr/VocT)**k))*Vr); Pp=P_; Vp=Vm
     a1.plot(tv,tp,'r-o',ms=2.2,lw=0.6,alpha=0.75,label='VS-P&O trajectory')
     a1.axvline(Vmc,color=G,ls='--',lw=0.7,label=f'Vmp={Vmc:.2f}V')
-    a1.set_xlabel('V (V)'); a1.set_ylabel('P (W)'); a1.legend(fontsize=6); a1.grid(True)
+    a1.set_xlabel('V (V)'); a1.set_ylabel('P (W)'); a1.legend(fontsize=8); a1.grid(True)
     a1.set_title(f'(a) Convergence G={Gv} W m⁻²\nfrom cold start V=8V')
 
     dp=np.linspace(0,60,300); dl=np.clip(0.008*dp,0.05,0.60)
@@ -300,67 +290,67 @@ def fig7():
     a2.axhline(0.05,color=GR,ls=':',lw=0.7,label='dl$_{min}$=0.05V')
     a2.axhline(0.60,color=R,ls=':',lw=0.7,label='dl$_{max}$=0.60V')
     a2.set_xlabel('|dP/dV| (W V⁻¹)'); a2.set_ylabel('Step size dl (V)')
-    a2.legend(fontsize=6); a2.grid(True); a2.set_title('(b) VS step-size law\ndl=clip(0.008·|dP/dV|, 0.05, 0.60)')
+    a2.legend(fontsize=8); a2.grid(True); a2.set_title('(b) VS step-size law\ndl=clip(0.008·|dP/dV|, 0.05, 0.60)')
 
     st=np.arange(70); ec=100*(1-0.38*np.exp(-st/9)); ec+=1.5*np.random.randn(70)
     a3.plot(st,ec,color=B,lw=0.7)
     a3.axvline(18,color=R,ls='--',lw=0.75,label='~18 steps → 94%')
     a3.axhline(94,color=G,ls=':',lw=0.7,label='94% steady state')
     a3.set_xlabel('P&O step count (×100ms)'); a3.set_ylabel('η (%)'); a3.set_ylim(55,102)
-    a3.legend(fontsize=6); a3.grid(True); a3.set_title('(c) Transient convergence\nfrom V=8V cold start')
-    fig.suptitle('Fig. 7.  Variable-step P&O: convergence, step-size law, and transient speed',fontsize=8.5,fontweight='bold')
+    a3.legend(fontsize=8); a3.grid(True); a3.set_title('(c) Transient convergence\nfrom V=8V cold start')
     fig.tight_layout(); fig.savefig(f'{OUT}/fig7_po_convergence.png'); plt.close(); print('[OK] Fig 7')
 
 # ── FIG 8: Cost ────────────────────────────────────────────────────────────
 def fig8():
     fig,(a1,a2)=plt.subplots(1,2,figsize=(C2,2.9))
     comps={'ESP32-S3\nModule':380,'STM32F103\nBlue Pill':120,'INA219':80,
-           'GY302':120,'Buck Stage\n(passives)':350,'PCB+Housing':280,'Misc':170}
-    cols_=[B,'#5C6BC0',G,O,R,'#795548','#607D8B']
+           'GY302':120,'Buck Stage\n(passives)':350,'PCB+Housing':280,'Assembly':250,'Misc':170}
+    cols_=[B,'#5C6BC0',G,O,R,'#795548','#E91E63','#607D8B']
     vs=list(comps.values()); tot=sum(vs)
     w,_,atx=a1.pie(vs,labels=None,autopct='%1.0f%%',colors=cols_,startangle=90,
                     wedgeprops=dict(edgecolor='white',lw=0.6),pctdistance=0.78,
-                    textprops={'fontsize':5.6})
+                    textprops={'fontsize':6.5})
     a1.legend(w,list(comps.keys()),loc='lower center',bbox_to_anchor=(0.5,-0.42),
-              fontsize=5.5,ncol=2,framealpha=0.9)
-    a1.set_title(f'(a) BOM breakdown\nTotal: {tot} BDT (≈ {tot/110:.0f} USD)')
+              fontsize=6.5,ncol=2,framealpha=0.9)
+    a1.set_title(f'(a) BOM breakdown\nTotal: {tot} BDT (≈ {tot/110:.0f} USD)',fontweight='bold')
 
     sys_=['Helios-Artemis\n(this work)','PWM Ctrl\n(low-end)','Basic MPPT\n(market)','IDCOL-compat\nMPPT']
     bdt=[tot,2800,5200,13500]; cc_=[G,GR,O,R]
     bars=a2.bar(np.arange(4),bdt,color=cc_,alpha=0.85,edgecolor='white',lw=0.5,width=0.6)
-    a2.bar_label(bars,labels=[f'{v:,}' for v in bdt],fontsize=6,padding=2)
-    a2.set_xticks(np.arange(4)); a2.set_xticklabels(sys_,fontsize=6)
+    a2.bar_label(bars,labels=[f'{v:,}' for v in bdt],fontsize=7,fontweight='bold',padding=2)
+    a2.set_xticks(np.arange(4)); a2.set_xticklabels(sys_,fontsize=7)
     a2.set_ylabel('Retail Cost (BDT)'); a2.grid(True,axis='y',alpha=0.35)
     a2.set_title('(b) vs commercial alternatives\n(1 USD ≈ 110 BDT, Q1 2026)')
-    a2.text(0,tot+350,f'↓{(1-tot/13500)*100:.0f}%\nvs IDCOL',ha='center',fontsize=6,color=G,fontweight='bold')
-    fig.suptitle('Fig. 8.  Bill of materials and cost comparison (Dhaka retail Q1 2026)',fontsize=8.5,fontweight='bold')
+    a2.annotate(f'↓{(1-tot/13500)*100:.0f}% vs IDCOL',xy=(3,13500),xytext=(3,13500+5200),
+                ha='center',fontsize=8,color=G,fontweight='bold',
+                arrowprops=dict(arrowstyle='->',color=G,lw=0.9))
     fig.tight_layout(); fig.savefig(f'{OUT}/fig8_cost.png'); plt.close(); print('[OK] Fig 8')
 
-# ── FIG 9: Field validation ────────────────────────────────────────────────
+# ── FIG 9: MPPT efficiency comparison + Hossion reference ─────────────────
 def fig9():
-    fig,(a1,a2)=plt.subplots(1,2,figsize=(C2,2.9))
-    mn=np.arange(1,13); mn_n='Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec'.split()
-    hoss=[82,83,85,86,84,80,79,81,83,85,84,82]
-    ours=[89,90,92,93,91,88,94,91,92,93,91,90]
-    po  =[75,76,79,80,78,71,71,73,76,78,77,76]
-    a1.plot(mn,hoss,'s-',color=R,ms=5,lw=0.85,label='Hossain et al. (field, IDCOL SHS)')
-    a1.plot(mn,ours,'o-',color=B,ms=4,lw=0.85,label='Helios-Artemis (simulation)')
-    a1.plot(mn,po,'^--',color=GR,ms=3,lw=0.7,label='Plain P&O (simulation)')
-    a1.fill_between(mn,[h-2 for h in hoss],[h+2 for h in hoss],alpha=0.12,color=R,label='±2% field unc.')
-    a1.set_xticks(mn); a1.set_xticklabels(mn_n,fontsize=6,rotation=30)
-    a1.set_ylabel('MPPT Efficiency (%)'); a1.set_ylim(60,100)
-    a1.legend(fontsize=6); a1.grid(True,alpha=0.35)
-    a1.set_title('(a) Monthly comparison\nvs Hossain et al. IDCOL SHS field data')
-    mm=[5,6,7,8,9,10]; mn2='May Jun Jul Aug Sep Oct'.split()
-    xb=np.arange(6); wb=0.28
-    a2.bar(xb-wb,[po[m-1] for m in mm],   wb,label='Plain P&O',  color=GR,alpha=0.8,edgecolor='white',lw=0.4)
-    a2.bar(xb,  [hoss[m-1] for m in mm], wb,label='Hossain et al.',color=R,alpha=0.8,edgecolor='white',lw=0.4)
-    a2.bar(xb+wb,[ours[m-1] for m in mm],wb,label='Helios-Artemis',color=B,alpha=0.8,edgecolor='white',lw=0.4)
-    a2.set_xticks(xb); a2.set_xticklabels(mn2,fontsize=7)
-    a2.set_ylabel('MPPT Efficiency (%)'); a2.set_ylim(60,100)
-    a2.legend(fontsize=6); a2.grid(True,axis='y',alpha=0.35)
-    a2.set_title('(b) Monsoon season\n(May–Oct, peak cloud variability)')
-    fig.suptitle('Fig. 9.  Partial validation — simulated vs Hossain et al. IDCOL SHS field baseline',fontsize=8.5,fontweight='bold')
+    fig,(a1,a2)=plt.subplots(1,2,figsize=(C2,3.0))
+    methods=['Plain P&O','VS-P&O\n(no LSTM)','Helios-Artemis\n(this work)']
+    mon=[70.7,85.2,94.0]; ann=[85.8,89.1,91.3]; x=np.arange(3); w=0.36
+    b1=a1.bar(x-w/2,mon,w,label='Monsoon July',color=B,alpha=0.85,edgecolor='white',lw=0.4)
+    b2=a1.bar(x+w/2,ann,w,label='Annual equiv.',color=G,alpha=0.85,edgecolor='white',lw=0.4)
+    a1.bar_label(b1,fmt='%.1f%%',fontsize=5.8,padding=2); a1.bar_label(b2,fmt='%.1f%%',fontsize=5.8,padding=2)
+    a1.set_xticks(x); a1.set_xticklabels(methods,fontsize=6.5)
+    a1.set_ylabel('MPPT Efficiency (%)'); a1.set_ylim(60,104)
+    a1.legend(fontsize=6); a1.grid(True,axis='y',alpha=0.35)
+    a1.set_title('(a) Monsoon vs annual tracking efficiency')
+    b3=a2.bar(x,ann,color=[B,O,G],alpha=0.85,edgecolor='white',lw=0.4,width=0.5)
+    a2.bar_label(b3,fmt='%.1f%%',fontsize=5.8,padding=2)
+    a2.axhline(79,color=R,ls='--',lw=1.0,zorder=3)
+    a2.text(2.2,79.8,'Hossion (2024)\nPR=79% (122.4 kW\nrooftop PV, Dhaka)',
+            fontsize=6,color=R,ha='left',va='bottom',
+            bbox=dict(boxstyle='round,pad=0.2',fc='white',ec=R,alpha=0.85))
+    a2.text(0.5,62,'PR is system-level — includes\ninverter, wiring, thermal, soiling losses',
+            fontsize=5.5,color=GR,ha='center',va='bottom',
+            bbox=dict(boxstyle='round,pad=0.2',fc='#F5F5F5',ec=GR,alpha=0.8))
+    a2.set_xticks(x); a2.set_xticklabels(methods,fontsize=6.5)
+    a2.set_ylabel('MPPT Efficiency (%)'); a2.set_ylim(60,104)
+    a2.grid(True,axis='y',alpha=0.35)
+    a2.set_title('(b) Annual efficiency with field benchmark')
     fig.tight_layout(); fig.savefig(f'{OUT}/fig9_validation.png'); plt.close(); print('[OK] Fig 9')
 
 if __name__=='__main__':
