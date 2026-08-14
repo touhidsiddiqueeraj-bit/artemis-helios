@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="800" viewBox="0 0 1600 800">
+  <defs>
+    <marker id="ah" viewBox="0 0 14 14" refX="12" refY="7" markerWidth="14" markerHeight="14" orient="auto-start-reverse">
+      <path d="M0,0 L14,7 L0,14 z" fill="#2a2a2a"/>
+    </marker>
+    <marker id="ahg" viewBox="0 0 14 14" refX="12" refY="7" markerWidth="14" markerHeight="14" orient="auto">
+      <path d="M0,0 L14,7 L0,14 z" fill="#7a7a7a"/>
+    </marker>
+  </defs>
+
+  <rect x="0" y="0" width="1600" height="800" fill="#ffffff"/>
+
+  <!-- ============ POWER PATH (top row) ============ -->
+  <g stroke="#2a2a2a" stroke-width="4" fill="none">
+    <line x1="320" y1="170" x2="430" y2="170" marker-end="url(#ah)"/>
+    <line x1="690" y1="170" x2="800" y2="170" marker-end="url(#ah)"/>
+    <line x1="1050" y1="170" x2="1160" y2="170" marker-end="url(#ah)"/>
+  </g>
+
+  <rect x="70"   y="95"  width="250" height="145" rx="10" fill="#f7e8c9" stroke="#b4832b" stroke-width="4"/>
+  <rect x="430"  y="95"  width="260" height="145" rx="10" fill="#e6edf5" stroke="#4e6e94" stroke-width="4"/>
+  <rect x="800"  y="95"  width="250" height="145" rx="10" fill="#e3efe3" stroke="#4c7a46" stroke-width="4"/>
+  <rect x="1160" y="95"  width="190" height="145" rx="10" fill="#f1f1f1" stroke="#6f6f6f" stroke-width="4"/>
+
+  <g font-family="Liberation Sans, Arial, sans-serif">
+    <text x="92"  y="142" font-size="50" font-weight="bold" fill="#141414">PV PANEL</text>
+    <text x="92"  y="186" font-size="40" fill="#232323">50 Wp mono-Si</text>
+    <text x="92"  y="222" font-size="40" fill="#232323">V<tspan baseline-shift="sub" font-size="26">mp</tspan> ≈ 17 V</text>
+
+    <text x="452" y="142" font-size="50" font-weight="bold" fill="#141414">BUCK CONV.</text>
+    <text x="452" y="186" font-size="40" fill="#232323">IRFB4110</text>
+    <text x="452" y="222" font-size="40" fill="#232323">50 kHz PWM</text>
+
+    <text x="822" y="142" font-size="50" font-weight="bold" fill="#141414">BATTERY</text>
+    <text x="822" y="186" font-size="40" fill="#232323">12 V · 7 Ah SLA</text>
+    <text x="822" y="222" font-size="40" fill="#232323">CC/CV 3-stage</text>
+
+    <text x="1182" y="142" font-size="50" font-weight="bold" fill="#141414">LOAD</text>
+    <text x="1182" y="186" font-size="40" fill="#232323">DC output</text>
+    <text x="1182" y="222" font-size="40" fill="#232323">12 V rail</text>
+
+    <!-- power labels -->
+    <text x="375" y="278" font-size="40" text-anchor="middle" fill="#232323">V<tspan baseline-shift="sub" font-size="26">in</tspan> · I<tspan baseline-shift="sub" font-size="26">in</tspan></text>
+    <text x="700" y="278" font-size="40" text-anchor="middle" fill="#232323">V<tspan baseline-shift="sub" font-size="26">out</tspan> · I<tspan baseline-shift="sub" font-size="26">bat</tspan></text>
+    <text x="1105" y="278" font-size="40" text-anchor="middle" fill="#232323">12 V</text>
+
+    <!-- ============ MIDDLE BAND: control paths ============ -->
+    <!-- INA219 sense node -->
+    <rect x="760" y="275" width="200" height="90" rx="8" fill="#ffffff" stroke="#8f8f8f" stroke-width="3" stroke-dasharray="8 6"/>
+    <text x="782" y="308" font-size="44" font-weight="bold" fill="#141414">INA219</text>
+    <text x="782" y="340" font-size="36" fill="#232323">PV V·I (I²C)</text>
+    <line x1="860" y1="275" x2="860" y2="240" stroke="#7a7a7a" stroke-width="3.5" stroke-dasharray="8 6" marker-end="url(#ahg)"/>
+
+    <!-- Vref / PWM: Artemis -> Buck -->
+    <path d="M1190,490 L1190,380 L560,380 L560,240" fill="none" stroke="#2a2a2a" stroke-width="4" marker-end="url(#ah)"/>
+    <text x="680" y="414" font-size="40" text-anchor="middle" fill="#232323">V<tspan baseline-shift="sub" font-size="26">ref</tspan> · PWM 50 kHz</text>
+
+    <!-- CC/CV: Artemis -> Battery -->
+    <path d="M1260,490 L1260,415 L1000,415 L1000,240" fill="none" stroke="#2a2a2a" stroke-width="4" marker-end="url(#ah)"/>
+    <text x="1095" y="452" font-size="40" text-anchor="middle" fill="#232323">CC/CV control</text>
+
+    <!-- ============ CONTROL ROW (bottom) ============ -->
+    <rect x="70"  y="490" width="320" height="240" rx="10" fill="#f6f0e1" stroke="#8f6e2e" stroke-width="4"/>
+    <rect x="480" y="490" width="420" height="240" rx="10" fill="#e9e6f7" stroke="#4a4395" stroke-width="4"/>
+    <rect x="980" y="490" width="460" height="240" rx="10" fill="#e0f0ea" stroke="#2e6b58" stroke-width="4"/>
+
+    <g stroke="#2a2a2a" stroke-width="4" fill="none">
+      <line x1="390" y1="565" x2="480" y2="565" marker-end="url(#ah)"/>
+      <line x1="900" y1="565" x2="980" y2="565" marker-end="url(#ah)" marker-start="url(#ah)"/>
+    </g>
+
+    <!-- SENSORS -->
+    <text x="92"  y="536" font-size="50" font-weight="bold" fill="#141414">SENSORS</text>
+    <text x="92"  y="580" font-size="40" fill="#232323">I²C bus · 100 ms</text>
+    <text x="92"  y="626" font-size="40" fill="#232323">BH1750 · OV2640</text>
+    <text x="92"  y="666" font-size="40" fill="#232323">DS3231 · SD card</text>
+
+    <!-- HELIOS -->
+    <text x="502" y="538" font-size="52" font-weight="bold" fill="#141414">HELIOS</text>
+    <text x="502" y="580" font-size="40" fill="#232323">ESP32-S3</text>
+    <text x="502" y="628" font-size="40" fill="#232323">• LSTM 32-unit</text>
+    <text x="502" y="668" font-size="40" fill="#232323">• α gain scheduler</text>
+    <text x="502" y="706" font-size="40" fill="#232323">• TF.js · SD · web</text>
+
+    <!-- ARTEMIS -->
+    <text x="1002" y="538" font-size="52" font-weight="bold" fill="#141414">ARTEMIS</text>
+    <text x="1002" y="580" font-size="40" fill="#232323">STM32F103</text>
+    <text x="1002" y="628" font-size="40" fill="#232323">• VS-P&amp;O @ 100 ms</text>
+    <text x="1002" y="668" font-size="40" fill="#232323">• PWM 50 kHz · TC4420</text>
+    <text x="1002" y="706" font-size="40" fill="#232323">• CC/CV charge</text>
+
+    <!-- arrows labels -->
+    <text x="435" y="546" font-size="40" text-anchor="middle" fill="#232323">I²C</text>
+    <text x="940" y="528" font-size="44" font-weight="bold" text-anchor="middle" fill="#141414">UART</text>
+  </g>
+</svg>
