@@ -4,6 +4,8 @@
 **Title:** Helios-Artemis: Design and Simulation-Based Validation of a Dual-Microcontroller Predictive Solar MPPT Controller with On-Device LSTM Retraining for Sylhet Monsoon SHS Deployment in Bangladesh  
 **Journal:** International Journal of Power Electronics and Drive Systems (IJPEDS)
 
+> **Note:** A preprint of the revised manuscript has been posted on Zenodo (DOI: 10.5281/zenodo.21935344, CC BY 4.0) and disclosed to the Editorial Office via email. The manuscript is under consideration only at IJPEDS.
+
 ---
 
 ## Editor-in-Chief Comments
