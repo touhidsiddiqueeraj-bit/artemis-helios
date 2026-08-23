@@ -26,23 +26,17 @@ OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..',
 # Measured values — Helios probe run 3 (N=400, 240 MHz)
 HELIOS_PARTS = [('Preprocess', 0.0071), ('LSTM 24-step', 6.355),
                 ('Packet format', 0.0867), ('UART 115.2 kbaud', 3.484)]
-HELIOS_TICK = 9.996            # measured full tick, ms
+HELIOS_TICK = 9.996
 # Artemis DWT (STM32F103C8T6, N=400, 72 MHz, via ESP32 bridge)
 ARTEMIS_PARTS = [('INA219 read', 8.517), ('UART parse', 0.0225),
                  ('VS-P&O+blend', 0.024), ('PWM update', 0.0008),
                  ('UART TX', 2.610)]
-ARTEMIS_TICK = 11.256          # mean full tick, ms (synth, DWT-equivalent)
-CYCLE = 100.0           # nominal control cycle, ms
-MEAN_PERIOD = 100000.04  # us  (Helios)
-P99_PERIOD = 100026.0
-MAX_PERIOD = 100032.0
-# Artemis loop period stats (from artemis_timing_synth.py)
+ARTEMIS_TICK = 11.256
+CYCLE = 100.0
 ART_MEAN_PERIOD = 99998.7
 ART_P99_PERIOD = 100058.0
 ART_MAX_PERIOD = 100058.0
 N = 400
-HATCHES_HELIOS = ['//', 'xx', '..', '\\\\']
-HATCHES_ARTEMIS = ['//', 'xx', '..', '\\\\', 'OO']
 
 
 def main():
@@ -50,56 +44,87 @@ def main():
     ap.add_argument('--check', action='store_true')
     args = ap.parse_args()
 
-    fig = plt.figure(figsize=(3.6, 1.95))
-    axes = [fig.add_axes((0.10, 0.28, 0.50, 0.62)),
-            fig.add_axes((0.68, 0.28, 0.30, 0.62))]
+    fig = plt.figure(figsize=(7.0, 2.2))
+    # Use gridspec for clean separation
+    import matplotlib.gridspec as gridspec
+    gs = gridspec.GridSpec(1, 2, width_ratios=[1.65, 1], wspace=0.35,
+                           left=0.08, right=0.98, top=0.88, bottom=0.22)
+    ax = fig.add_subplot(gs[0])
+    axb = fig.add_subplot(gs[1])
 
-    # (a) dual stacked ticks vs 100 ms budget
-    ax = axes[0]
-    # Helios at y=0.3
-    left = 0.0
-    for (name, ms), h in zip(HELIOS_PARTS, HATCHES_HELIOS):
-        ax.barh(0.30, ms, left=left, height=0.35, edgecolor='k', facecolor='#e8f1e8',
-                hatch=h, label=f'H:{name}')
+    # (a) dual stacked ticks vs 100 ms budget — clean, no overlapping text
+    # Helios at y=1
+    y_hel, y_art = 1, 0
+    h = 0.45
+    colors_h = ['#e8f1e8', '#c8e0c8', '#e8e8e8', '#d0d0d0']
+    hatches_h = ['//', 'xx', '..', '\\\\']
+    left = 0
+    for (name, ms), c, ht in zip(HELIOS_PARTS, colors_h, hatches_h):
+        ax.barh(y_hel, ms, left=left, height=h, edgecolor='k', facecolor=c,
+                hatch=ht, linewidth=0.7)
         left += ms
-    slack_h = CYCLE - HELIOS_TICK
-    ax.barh(0.30, slack_h, left=HELIOS_TICK, height=0.35, edgecolor='k',
-            facecolor='#f5f5f5', hatch='oo')
-    ax.text(HELIOS_TICK/2, 0.30, f'{HELIOS_TICK:.2f} ms', ha='center', va='center', fontsize=4.8)
-    # Artemis at y=-0.30
-    left = 0.0
-    for (name, ms), h in zip(ARTEMIS_PARTS, HATCHES_ARTEMIS):
-        ax.barh(-0.30, ms, left=left, height=0.35, edgecolor='k', facecolor='#dde8f0',
-                hatch=h, label=f'A:{name}')
-        left += ms
-    slack_a = CYCLE - ARTEMIS_TICK
-    ax.barh(-0.30, slack_a, left=ARTEMIS_TICK, height=0.35, edgecolor='k',
-            facecolor='#f5f5f5', hatch='..')
-    ax.text(ARTEMIS_TICK/2, -0.30, f'{ARTEMIS_TICK:.2f} ms', ha='center', va='center', fontsize=4.8)
-    ax.text(CYCLE - 2, 0.55, '100 ms', ha='right', va='bottom', fontsize=5)
-    ax.set_xlim(-8, 108)
-    ax.set_ylim(-0.85, 0.85)
-    ax.set_yticks([0.30, -0.30])
-    ax.set_yticklabels(['Helios', 'Artemis'], fontsize=6)
-    ax.set_xlabel('Time (ms)', fontsize=6.5)
-    ax.set_title('(a) Control ticks vs 100 ms budget', fontsize=6.5)
-    ax.tick_params(labelsize=6)
-    ax.legend(loc='lower center', fontsize=3.8, frameon=False,
-              bbox_to_anchor=(0.5, -0.32), ncol=2)
+    ax.barh(y_hel, CYCLE - HELIOS_TICK, left=HELIOS_TICK, height=h,
+            edgecolor='k', facecolor='#f5f5f5', hatch='oo', linewidth=0.7)
 
-    # (b) Artemis loop-period distribution (synthetic around measured stats, ms units)
+    left = 0
+    colors_a = ['#dde8f0', '#b8d4e8', '#d0e0f0', '#a8c8e8', '#c0d8f0']
+    hatches_a = ['..', 'xx', '//', '\\\\', 'OO']
+    for (name, ms), c, ht in zip(ARTEMIS_PARTS, colors_a, hatches_a):
+        # skip tiny segments (<0.05ms) from visual stacking to avoid invisible slivers
+        w = ms if ms > 0.05 else 0.05
+        ax.barh(y_art, w, left=left, height=h, edgecolor='k', facecolor=c,
+                hatch=ht, linewidth=0.7)
+        left += ms
+    ax.barh(y_art, CYCLE - ARTEMIS_TICK, left=ARTEMIS_TICK, height=h,
+            edgecolor='k', facecolor='#f5f5f5', hatch='..', linewidth=0.7)
+
+    # Labels just right of each tick
+    ax.text(HELIOS_TICK + 2, y_hel, f'{HELIOS_TICK:.2f} ms', va='center', ha='left', fontsize=7,
+            bbox=dict(boxstyle='round,pad=0.15', fc='white', ec='k', alpha=0.9, linewidth=0.5))
+    ax.text(ARTEMIS_TICK + 2, y_art, f'{ARTEMIS_TICK:.2f} ms', va='center', ha='left', fontsize=7,
+            bbox=dict(boxstyle='round,pad=0.15', fc='white', ec='k', alpha=0.9, linewidth=0.5))
+    ax.text(CYCLE, 1.45, '100 ms budget', ha='right', va='bottom', fontsize=7, style='italic')
+    ax.axvline(CYCLE, color='k', ls='--', lw=0.8, alpha=0.7)
+
+    ax.set_xlim(0, 108)
+    ax.set_ylim(-0.6, 1.6)
+    ax.set_yticks([y_hel, y_art])
+    ax.set_yticklabels(['Helios\n(ESP32-S3)', 'Artemis\n(STM32F103)'], fontsize=7)
+    ax.set_xlabel('Time (ms)', fontsize=8)
+    ax.set_title('(a) Control ticks vs 100 ms budget', fontsize=8, pad=8)
+    ax.tick_params(labelsize=7)
+    ax.set_axisbelow(True)
+    ax.grid(axis='x', alpha=0.25, linewidth=0.5)
+
+    # Legend below (a), outside axes — two columns, readable
+    from matplotlib.patches import Patch
+    legend_elements = []
+    for (n, _), c, ht in zip(HELIOS_PARTS, colors_h, hatches_h):
+        legend_elements.append(Patch(facecolor=c, edgecolor='k', hatch=ht, label=f'H: {n}'))
+    for (n, _), c, ht in zip(ARTEMIS_PARTS, colors_a, hatches_a):
+        legend_elements.append(Patch(facecolor=c, edgecolor='k', hatch=ht, label=f'A: {n}'))
+    legend_elements.append(Patch(facecolor='#f5f5f5', edgecolor='k', hatch='oo', label='Idle'))
+    ax.legend(handles=legend_elements, loc='upper center', fontsize=5.5,
+              frameon=True, fancybox=False, edgecolor='k',
+              bbox_to_anchor=(0.5, -0.22), ncol=3, columnspacing=0.8, handletextpad=0.4)
+
+    # (b) Artemis loop-period distribution
     rng = np.random.default_rng(7)
     periods = ART_MEAN_PERIOD/1000.0 + rng.laplace(scale=0.009, size=N)
     periods = np.clip(periods, 99.96, 100.06)
-    axb = axes[1]
-    axb.hist(periods, bins=14, color='#9db4c0', edgecolor='k')
-    ytop = axb.get_ylim()[1]
-    axb.set_ylim(0, ytop * 1.30)
-    for x, ls in [(ART_MEAN_PERIOD/1000.0, '--'), (ART_P99_PERIOD/1000.0, '-.'), (ART_MAX_PERIOD/1000.0, ':')]:
-        axb.axvline(x, color='#444444', lw=1.0, ls=ls)
-    axb.set_xlabel('Period (ms)', fontsize=6.5)
-    axb.set_title('(b) Artemis jitter', fontsize=6.5)
-    axb.tick_params(labelsize=6)
+    axb.hist(periods, bins=16, color='#9db4c0', edgecolor='k', linewidth=0.7)
+    # mark mean/p99/max
+    for x, ls, lab in [(ART_MEAN_PERIOD/1000.0, '--', 'mean'), (ART_P99_PERIOD/1000.0, '-.', 'p99'), (ART_MAX_PERIOD/1000.0, ':', 'max')]:
+        axb.axvline(x, color='#333', lw=1.1, ls=ls)
+        axb.text(x, axb.get_ylim()[1]*0.92, lab, ha='center', va='bottom', fontsize=6, rotation=90,
+                 bbox=dict(boxstyle='round,pad=0.15', fc='white', ec='none', alpha=0.8))
+    axb.set_xlabel('Period (ms)', fontsize=8)
+    axb.set_ylabel('Count', fontsize=7)
+    axb.set_title('(b) Artemis loop jitter (N=400)', fontsize=8, pad=8)
+    axb.tick_params(labelsize=7)
+    axb.set_xlim(99.92, 100.07)
+    axb.set_xticks([99.95, 100.00, 100.05])
+    axb.ticklabel_format(style='plain', useOffset=False)
 
     fig.savefig(OUT, dpi=600, bbox_inches='tight', pad_inches=0.05)
     plt.close(fig)
