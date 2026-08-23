@@ -1,0 +1,168 @@
+-- Paper ID# 25195
+-- ORIGINAL RESEARCH PAPER: minimum 25 references & REVIEW PAPERS: minimum 40 references
+-- IJPEDS GFA & Template (MS Word version): https://iaescore.com/gfa/ijpeds.docx
+-- IJPEDS GFA & Template (LaTeX version): https://iaescore.com/gfa/ijpeds.rar
+======================================================
+
+Dear Prof/Dr/Mr/Mrs Mr Hussain Touhid Siddiquee,
+
+We have reached a decision regarding your submission entitled "Helios-Artemis: Design and Simulation-Based Validation of a Dual-Microcontroller Predictive Solar MPPT Controller with On-Device LSTM Retraining for Sylhet Monsoon SHS Deployment in Bangladesh" to International Journal of Power Electronics and Drive Systems (IJPEDS), a SCOPUS indexed Journal, Scimago Journal Ranking (SJR): 0.270, CiteScore: 3.2, and SNIP: 0.639.
+
+Our decision is: Revisions Required
+The presentation of the simulation and/or experimental setup (in the Method section) must be clear and complete in every detail, facilitating reproducibility by other scientists. Present a picture of your simulation and/or experimental setup and describe your work clearly. The goal of your revised paper is to describe novel technical results. Please prepare your revised paper within eight (8) weeks. Read the checklist for preparing your revised paper for publication at: https://ijpeds.iaescore.com/index.php/IJPEDS/about/editorialPolicies#custom-4. Please try to follow the format as closely as possible.
+
+Please submit your revised paper in MS Word file format (zip of your LATEX source files if you presented your paper in LATEX) and submit it through our online system at the same ID number (NOT as a new submission) or simply by replying to this email (ONLY if you have problems).
+
+I look forward for hearing from you
+
+Thank you
+
+Best Regards,
+Prof. Dr. Sanjeevikumar Padmanaban
+University of South-Eastern Norway, Porsgrunn
+ijpeds@iaesjournal.com
+
+------------------------------------------------------
+
+------------------------------------------------------
+Reviewer A:
+
+1. The paper must provide a complete and reproducible power-stage model
+The most important technical weakness is that the converter model is not described with sufficient detail to independently reproduce the reported MPPT results. The manuscript identifies a 50-Wp mono-Si PV module, a buck converter, IRFB4110 MOSFET, TC4420 gate driver, 100 μH/470 μF LC filter, 50-kHz switching frequency, and INA219 sensing, but these specifications alone are insufficient to establish a rigorous switching-converter simulation. The revised manuscript should provide the complete converter topology and all electrical parameters, including PV-side and battery-side operating ranges, MOSFET switching model, diode/body-diode characteristics, inductor DCR, capacitor ESR, switching/dead-time assumptions, gate resistance, driver supply voltage, PWM limits, current limits, sampling delays, sensor quantization, ADC/sensor filtering, controller execution time, and initial conditions. The authors should explicitly state whether the Simulink model is averaged, switching-level, or semiconductor-level and identify the exact solver, step size, simulation duration, and numerical tolerances. A complete schematic/block diagram with signal names and measurement points should be included. Without these details, the reported 94% MPPT efficiency cannot be independently reproduced, and the manuscript remains closer to an algorithmic simulation study than a rigorous power-electronics validation paper.
+
+2. The claimed MPPT improvement requires stronger and fairer benchmark methodology
+The reported 23.3-percentage-point improvement over plain P&O is impressive, but it requires more rigorous benchmarking before it can be interpreted as a controller-level advance. The manuscript reports 94.0% for the proposed method, 70.7% for P&O, 85.2% for VS-P&O, and 75.2% for incremental conductance under the monsoon scenario. However, the manuscript should demonstrate that all algorithms use identical PV models, sampling intervals, sensing resolution, converter limits, initialization, irradiance trajectories, battery constraints, and computational assumptions. Most importantly, the authors should include a controlled transient benchmark suite, not only stochastic full-day simulations. At minimum, evaluate step-down, step-up, ramp, cloud-edge, repeated cloud transients, and stochastic irradiance cases. Report settling time, maximum tracking error, overshoot/undershoot, energy-not-captured, oscillation amplitude around MPP, and tracking efficiency. A particularly useful experiment would compare the proposed controller against P&O and VS-P&O using exactly the same irradiance waveform and calculate instantaneous tracking error P
+MPP−PPV. This would demonstrate whether the 23.3-point gain originates specifically from predictive pre-positioning rather than from differences in controller tuning or operating assumptions.
+
+3. The control law and gain-scheduling mechanism require substantially deeper technical justification
+The proposed control equation is interesting: the new reference is formed by blending the P&O reference and predicted MPP voltage, with adaptive weighting and a 15% deviation deadband. The manuscript gives the relationship Vref,new=(1−α)Vref,P&O+αVMPP,pred, followed by asymmetric cloud-clearing/cloud-drop weighting and a 20-step cooldown. However, the manuscript currently presents these parameters largely as selected design values rather than deriving them from control-theoretic or optimization principles. The authors should explain why 0.35 is selected as the nominal α, why the 0.20–0.55 region is considered robust, why 15% is appropriate for the triggering deadband, and why 20 control cycles are sufficient for cooldown. The α sensitivity analysis is useful, but it should be complemented by a multidimensional sensitivity analysis involving α, deadband, cooldown, prediction horizon, P&O step size, and UART delay. The paper should also discuss closed-loop stability or at least boundedness under prediction error. A predictive reference can destabilize or create oscillatory behaviour if the forecast is wrong or delayed; therefore, the authors should explicitly establish the conditions under which the predictive component remains subordinate to the stabilizing reactive controller.
+
+4. The manuscript should quantify the complete control-loop latency rather than only MCU separation
+The dual-MCU architecture is one of the paper's strongest ideas, but the claim that separating LSTM inference from PWM control prevents latency-induced jitter is not adequately demonstrated. The manuscript states that Helios runs LSTM inference while Artemis executes 100-ms MPPT updates and 50-kHz PWM, with UART communication between them. A reviewer needs actual timing measurements, not only architectural reasoning. Please report LSTM inference time distribution, preprocessing time, UART packet transmission time, packet parsing time, sensor acquisition time, control computation time, PWM update latency, worst-case execution time, and jitter. The authors should provide minimum/mean/maximum or percentile latency values over a long execution interval. Also clarify whether the 100-ms communication interval introduces an effective 100-ms prediction/control latency and how this interacts with cloud transients. If the LSTM predicts irradiance at a horizon shorter than or comparable to this latency, the benefit may be substantially different from what is claimed. A timing diagram showing irradiance → sensor → Helios → prediction → UART → Artemis → PWM → converter → PV response would greatly strengthen the paper.
+
+5. Power semiconductor and thermal analysis is currently too superficial for the claimed hardware deployment
+The manuscript reports a peak junction temperature of 62 °C and approximately 0.27 W conduction loss based on an assumed RDS(on), but this is insufficient to establish semiconductor reliability. The power-stage analysis should include both conduction and switching losses, especially because the MOSFET operates at 50 kHz and the gate driver is explicitly part of the architecture. The authors should calculate P
+cond, Psw, gate-drive loss, diode/body-diode conduction loss, inductor copper/core losses, capacitor losses, and total converter loss. The temperature calculation should use a clearly defined thermal network, including junction-to-case, case-to-heatsink, heatsink-to-ambient, PCB thermal paths, and actual airflow/environmental assumptions. The stated effective Rth,JA should be justified rather than assumed. A loss breakdown and efficiency-versus-load curve should be added. This is particularly important because the paper presents a low-cost controller for rural SHS deployment; reliability under elevated ambient temperature, enclosure conditions, dust, and prolonged operation is more relevant than a single nominal simulated junction temperature.
+
+6. The paper should distinguish MPPT efficiency from converter/system efficiency much more rigorously
+The manuscript correctly notes that the 79% field performance ratio from a 122.4-kW Dhaka PV installation is not directly comparable to its 91.3% simulated MPPT tracking efficiency. Nevertheless, the paper should go further and establish a precise definition of the proposed metric. The equation for MPPT tracking efficiency must be explicitly stated, including the reference P MPP, integration interval, treatment of low-irradiance periods, converter losses, battery charging constraints, and any clipping or saturation. If P
+MPP is obtained from an analytical PV model while P PV comes from the converter simulation, the authors must make clear that this is a controller tracking metric, not an energy-conversion efficiency. A separate metric should be reported for converter efficiency, η conv=P out /P in , and ideally end-to-end PV-to-battery energy efficiency. This distinction is particularly important because the manuscript currently uses terms such as “yield benefit” and “annual benefit,” which could be interpreted as system energy yield rather than MPPT tracking improvement. The revised manuscript should avoid any claim that the controller produces a 23.3-percentage-point improvement in actual SHS energy yield unless that has been independently demonstrated.
+
+------------------------------------------------------
+
+------------------------------------------------------
+Reviewer B:
+
+The manuscript has several genuinely interesting engineering elements:
+- dual-MCU separation of AI prediction and deterministic control;
+- LSTM-assisted predictive MPPT;
+- variable-step P&O fallback;
+- explicit cloud-transient-aware blending;
+- low-cost embedded implementation;
+- stochastic irradiance generation;
+- field-informed model validation;
+- Monte Carlo evaluation;
+- explicit sensitivity analysis.
+
+The architecture is described as ESP32-S3 for prediction/logging and STM32F103 for real-time control, with 100-ms UART communication and 50-kHz PWM switching. That partitioning is potentially a worthwhile contribution to renewable-energy power electronics and embedded control systems. However, the paper's central evidentiary limitation is decisive: The proposed MPPT controller has not yet been experimentally validated as a closed-loop hardware system.
+
+The field campaign validates an irradiance logger/model, not the actual MPPT power converter. The manuscript itself acknowledges this limitation.
+
+Therefore, the authors should not attempt to hide this limitation. Instead, they should make the methodological distinction a strength:
+- field-informed stochastic modelling + reproducible controller simulation + embedded architecture feasibility
+- rather than claiming demonstrated field deployment performance.
+
+The field irradiance instrumentation is not adequate to support broad claims without stronger qualification
+The authors deserve credit for explicitly reporting that the BH1750 is sensor-grade rather than pyranometer-grade and that 2.6% of daytime readings were affected by saturation. Nevertheless, this limitation directly affects the paper's strongest empirical claim: validation of the synthetic irradiance model. The revised manuscript should provide the BH1750 measurement range, spectral response, cosine-response characteristics, calibration procedure, calibration uncertainty, temporal response, mounting geometry, and the rationale for converting lux-like sensor output into irradiance. The back-to-back glass calibration with ratio 0.9314 is useful, but it does not establish absolute radiometric accuracy. If possible, the authors should compare the BH1750 against a calibrated reference sensor during at least a subset of the campaign. At minimum, the manuscript should explicitly frame the field dataset as relative short-timescale irradiance variability data, rather than as high-accuracy absolute GHI measurements. This distinction matters because the LSTM input and stochastic-model calibration depend directly on measurement quality.
+
+------------------------------------------------------
+
+------------------------------------------------------
+Reviewer C:
+
+The Introduction has the requested logical components but should be rewritten into a tighter engineering argument
+The current Introduction is commendably organized into Context, Problem Statement, State of the Art, Gap Analysis, Contribution, and Significance, which is already aligned with the requested logical flow. However, the sections are somewhat repetitive, and the contribution/significance material overlaps considerably. I recommend restructuring it into six compact paragraphs: (1) Context: explain the SHS power-electronics problem and why monsoon variability matters; (2) Problem: quantify the limitations of reactive MPPT under fast irradiance changes; (3) State of the Art: compare P&O/VS-P&O/INC, predictive MPPT, LSTM, lightweight AI, and multi-MCU architectures; (4) Gap: identify precisely what existing approaches do not simultaneously address—resource-constrained dual-plane control, cloud-independent prediction, field-informed stochastic validation, and low-cost deployment; (5) Contributions: give four numbered contributions without repeating numerical results excessively; (6) Significance: explain why the work matters to low-cost renewable-energy power electronics. The final paragraph should also explicitly state what the paper does not claim, namely full field validation of the controller. This would greatly improve clarity and scientific credibility.
+
+
+Add real transient-response comparisons
+Do not rely primarily on full-day efficiency.
+Add:
+- irradiance step-up;
+- irradiance step-down;
+- cloud-edge ramp;
+- repeated cloud transient;
+- stochastic monsoon waveform.
+
+
+For each: P&O vs VS-P&O vs INC vs Helios-Artemis
+and report:
+- tracking error;
+- settling time;
+- overshoot;
+- undershoot;
+- energy loss;
+- MPPT efficiency;
+- MPP voltage error.
+This would make the 23.3 percentage-point improvement much more technically convincing.
+
+
+Strengthen hardware/power-electronics validation
+At minimum, provide:
+- converter schematic;
+- component values;
+- semiconductor model;
+- switching losses;
+- conduction losses;
+- thermal model;
+- current/voltage limits;
+- sensing delay;
+- PWM timing;
+- UART timing;
+- execution-time measurements.
+Ideally, perform hardware-in-the-loop (HIL) before claiming deployment readiness.
+
+------------------------------------------------------
+
+
+------------------------------------------------------------------
+
+IMPORTANT!!
+
+1). PLEASE ADHERE STRICTLY THE GUIDE OF AUTHORS http://iaescore.com/gfa/ijpeds.docx (Use this file as your paper template!!)
+
+2). It is mandatory to present your final paper according to "IMRADC style" format, i.e.:
+     1. INTRODUCTION
+     2. The Proposed Method/Algorithm/Procedure specifically designed (optional)
+     3. METHOD
+     4. RESULTS AND DISCUSSION
+     5. CONCLUSION
+     See http://iaescore.com/gfa/ijpeds.docx
+
+3). Add biographies of authors as our template (include links to the 4 authors' profiles, do not delete any icons in the template). Provide links for all authors to the 4 icons (Scholar, Scopus, Publons and ORCID). It is mandatory!!
+
+4). Prepare all your tables strictly adhere the guidelines (NOT as figure)
+
+5). Use different PATTERNS for presenting different results in your figures/graphics  (instead of different colors). It is mandatory!!
+
+6). Please ensure that all references have been cited in your text. Use a tool such as EndNote, Mendeley, or Zotero for reference management and formatting, and choose IEEE style. Each citation should be written in the order of appearance in the text in square brackets. For example, the first citation [1], the second citation [2], and the third and fourth citations [3], [4]. When citing multiple sources at once, the preferred method is to list each number separately, in its own brackets, using a comma or dash between numbers, as such: [1], [3], [5]. It is not necessary to mention an author's name, pages used, or date of publication in the in-text citation. Instead, refer to the source with a number in a square bracket, e.g. [9], that will then correspond to the full citation in your reference list. Examples of in-text citations:
+    This theory was first put forward in 1970 [9].
+    Blaabjerg [10] has argued that ...
+    Several recent studies [7], [9], [11]-[15] have suggested that....
+    ... end of the line for my research [16].
+
+We usually expect a minimum of 2n+9 references (for original research paper) and 4n+18 (for review/survey paper) primarily to journal articles, where n=page length of your papers (in simple words for 8 pages, number of references are min 25 for research papers, and 50 entries for review/study papers). Citations of textbooks should be used very rarely and citations to web pages should be avoided. All cited papers should be referenced within the text of the manuscript.
+
+7). Please present all references as complete as possible and use IEEE style (include information of DOIs, volume, number, pages, etc). If it is available, DOI information is mandatory!! See http://iaescore.com/gfa/ijpeds.docx
+
+
+Please also pay an attention to double check your final camera ready paper:
+---------------------------------------------------------------------------------------------------
+(1) Introduction section: explain the context of the study and state the precise objective. Introduction section should be presented in 3-6 paragraphs. An Introduction should cover the following three (3) parts:
+- Background: Authors have to make clear what the context is. Ideally, authors should give an idea of the state-of-the art of the field the report is about.
+- The Problem: If there was no problem, there would be no reason for writing a manuscript, and definitely no reason for reading it. So, please tell readers why they should proceed reading. Experience shows that for this part a few lines are often sufficient.
+- The Proposed Solution: Now and only now! - authors may outline the contribution of the manuscript. Here authors have to make sure readers point out what are the novel aspects of authors' work. Authors should place the paper in proper context by citing relevant papers. At least 10 references (recent journal articles) are referenced to support this section.
+
+(2) Conclusion section: Summarize sentences the primary outcomes of the study in a paragraph. Are the claims in this section supported by the results, do they seem reasonable? Have the authors indicated how the results relate to expectations and to earlier research? Does the article support or contradict previous theories? Does the conclusion explain how the research has moved the body of scientific knowledge forward?
+
+(3) About Figures & Tables in your manuscript:
+- Because tables and figures supplement the text, all tables and figures should be REFERRED in the text. Authors MUST EXPLAIN what the reader should look for when using the table or figure. Focus only on the

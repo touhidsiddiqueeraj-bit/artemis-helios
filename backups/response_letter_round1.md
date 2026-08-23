@@ -1,6 +1,6 @@
 # Response to Editor and Reviewers
 
-**Paper ID#:** 25195 
+**Paper ID#:** 25195  
 **Title:** Helios-Artemis: Design and Simulation-Based Validation of a Dual-Microcontroller Predictive Solar MPPT Controller with On-Device LSTM Retraining for Sylhet Monsoon SHS Deployment in Bangladesh  
 **Journal:** International Journal of Power Electronics and Drive Systems (IJPEDS)
 

@@ -1,4 +1,5 @@
-1,C and E are empty, text size in figure 1 is too small, the references are not serialized and are random, figure 10 has a headline of fig8 embedded in the image, and the text itseld is too small to be readable, it also doesnt include the assembly fee,author biography section is empty, remove. Orpon Chanda received the B.Sc. degree in Electrical and
+> [!note]
+> [!note]1,C and E are empty, text size in figure 1 is too small, the references are not serialized and are random, figure 10 has a headline of fig8 embedded in the image, and the text itseld is too small to be readable, it also doesnt include the assembly fee,author biography section is empty, remove. Orpon Chanda received the B.Sc. degree in Electrical and
 Electronic Engineering from Shahjalal University of Science
 and Technology (SUST), Sylhet, Bangladesh. His research
 interests include solar energy systems, data acquisition and

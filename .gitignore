@@ -9,3 +9,15 @@ __pycache__/
 *.svg
 *.zip
 models/
+# audit backups & local state — keep .py helpers, drop binary BAKs
+backups/*.docx
+backups/*.pdf
+backups/*.png
+.palimpsest/
+Authors/*.jpeg
+# keep CSV results that are audit evidence, ignore transient caches
+*.tmp
+*.raw
+out.raw
+prototype/measurement/**/build/
+Code/ngspice/__pycache__/

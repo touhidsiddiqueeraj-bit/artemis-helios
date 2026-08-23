@@ -1,0 +1,53 @@
+* Helios-Artemis buck power stage - switching-level ngspice model
+* IJPEDS 25195 round-2 revision (Reviewer A.1)
+* Topology: non-synchronous buck, high-side IRFB4110, body-diode freewheel
+* f_sw = 50 kHz, PV 17.9 V (Vmp, 50 Wp panel), battery 13.5 V, I_L ~ 3.9 A CCM
+*
+* MODEL BASIS (datasheet-derived, stated in paper):
+*   IRFB4110: RDS(on)=3.7 mOhm @Vgs=10V, Vth=3.0V, Ciss=9600pF, Coss=830pF,
+*             Crss=590pF (Vds=25V), Qg=210nC, body diode trr=105ns, VF=1.3V@75A
+*   TC4420:   VDD=12V, peak 6A, R_out ~2.8 ohm (source), included in RGATE
+*   L:        100 uH, DCR = 30 mOhm (iron-powder toroid, 4 A rms class)
+*   C:        470 uF, ESR = 40 mOhm (electrolytic)
+*   INA219:   R_shunt = 0.01 ohm in PV input line (12-bit, 100 ms update)
+*   Switching assumptions: single switch, no dead-time required
+*   (body diode self-commutates); gate resistance 4.7 ohm total
+*   (driver output ~2.8 + 1.9 external); bootstrap 100 nF.
+
+.param VIN = 17.9
+.param VOUT = 13.5
+.param FSW = 50k
+.param RGATE = 4.7
+.param VDD = 12.0
+.param TPERIOD = {1/FSW}
+.param DUTY = {VOUT/VIN}
+.param RLOAD = 3.46
+.param TEND = 20m
+
+Vpv   pvin  0    DC {VIN}
+Rsh   pv    pvin {0.01}
+Rload bat   0    {RLOAD}
+
+M1    pvd   g    sw   sw   IRFB4110
+Lstry pv    pvd  {15n}
+Cin   pvd   esr_in {100u}
+Resr_in esr_in 0   {30m}
+Ccer  pvd   esr_cr {1u}
+Resr_cr esr_cr 0   {5m}
+Vg    gd    sw   PULSE(0 {VDD} 0 {50n} {50n} {DUTY*TPERIOD-100n} {TPERIOD})
+Rg    gd    g    {RGATE}
+
+D1    0    sw   D_BODY
+
+L1    sw    lout {100u}
+Rdcr  lout  bat  {30m}
+C1e   bat   ce   {470u}
+Resr  ce    0    {40m}
+
+.model IRFB4110 NMOS (Level=1 VTO=3.0 KP=38.5 RD=0.0018 RS=0.0019
++ CGSO=9.01n CGDO=0.59n CBD=0.24n PB=0.8)
+.model D_BODY D (IS=2.5e-9 N=1.08 RS=0.002 TT=55n)
+
+.tran 20n {TEND} 0 20n uic
+.option reltol=1e-3 abstol=1e-6 vntol=1e-6
+.end

@@ -11,7 +11,7 @@ Controllers implemented:
   5. PSO             — Particle Swarm Optimisation (N=10, baseline)
   6. GWO             — Grey Wolf Optimiser (N=10, baseline)
 
-PV model: Single-diode, 136W panel (Vmp=17V, Voc=21V, Isc=8.5A)
+PV model: Single-diode, 50Wp panel (Vmp=17V, Voc=21.6V, Isc=2.91A, Isc0=2.91, k=14.2606)
 Buck converter: IRFB4110, 50kHz, η=96.2%
 Battery: 12V/20Ah SLA
 
@@ -23,16 +23,16 @@ from dataclasses import dataclass
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# PV Panel Model (single-diode, 136W)
+# PV Panel Model (single-diode, 50Wp)
 # ─────────────────────────────────────────────────────────────────────────────
 @dataclass
 class PVPanelParams:
-    """136W panel — Sylhet SHS deployment."""
-    P_rated:  float = 136.0    # W
+    """50Wp panel — Sylhet SHS deployment."""
+    P_rated:  float = 50.0     # W
     V_mp:     float = 17.0     # V  (MPP voltage)
-    V_oc:     float = 21.0     # V  (open circuit)
-    I_sc:     float = 8.5      # A  (short circuit)
-    I_mp:     float = 8.0      # A  (MPP current)
+    V_oc:     float = 21.6     # V  (open circuit)
+    I_sc:     float = 2.91     # A  (short circuit)
+    I_mp:     float = 2.7      # A  (MPP current)
     G_ref:    float = 1000.0   # W/m² reference irradiance
     T_ref:    float = 25.0     # °C reference temperature
     alpha_I:  float = 0.0005   # /°C current temp. coefficient
@@ -41,7 +41,7 @@ class PVPanelParams:
 
 def pv_power(V_ref: float, G: float,
              T_amb: float = 30.0,
-             params: PVPanelParams = None) -> tuple[float, float, float]:
+             params: PVPanelParams | None = None) -> tuple[float, float, float]:
     """
     Compute PV panel power at operating voltage V_ref.
 
@@ -72,7 +72,7 @@ def pv_power(V_ref: float, G: float,
 
 
 def mpp_power(G: float, T_amb: float = 30.0,
-              params: PVPanelParams = None) -> tuple[float, float]:
+              params: PVPanelParams | None = None) -> tuple[float, float]:
     """Compute theoretical MPP power and MPP voltage via golden-section search."""
     if params is None:
         params = PVPanelParams()
@@ -251,9 +251,12 @@ class LSTMAssistedPaO:
     def __init__(self, alpha: float = 0.35, V_init: float = 17.0,
                  k: float = 0.005, delta_min: float = 0.05,
                  delta_max: float = 0.80,
-                 blend_threshold: float = 0.15):
+                 blend_threshold: float = 0.15,
+                 cooldown: int = 20):
         self.alpha     = alpha
         self.blend_thr = blend_threshold
+        self.cooldown  = int(cooldown)
+        self._cool_cnt = 0
         self.po = VariableStepPaO(V_init=V_init, k=k,
                                   delta_min=delta_min, delta_max=delta_max)
         self.V_ref     = V_init
@@ -281,18 +284,25 @@ class LSTMAssistedPaO:
         # P&O component (reactive)
         V_po = self.po.step(I_pv, V_pv)
 
-        # Predictive blend (applied only during significant G transients)
-        if G_pred > 1.0 and abs(G_pred - G_now) > self.blend_thr * max(G_pred, 1.0):
+        # Predictive blend (only during significant G transients, and not
+        # during the post-blend cooldown window)
+        transient = (G_pred > 1.0 and
+                     abs(G_pred - G_now) > self.blend_thr * max(G_pred, 1.0))
+        if transient and self._cool_cnt <= 0:
             V_mpp_pred = self._vmpp_lookup(G_pred)
             V_blend = (1.0 - self.alpha) * V_po + self.alpha * V_mpp_pred
+            self._cool_cnt = self.cooldown   # 20-step cooldown follows blend
         else:
             V_blend = V_po
+        if self._cool_cnt > 0:
+            self._cool_cnt -= 1
 
         self.V_ref = float(np.clip(V_blend, 5.0, 21.0))
         return self.V_ref
 
     def reset(self, V_init: float = 17.0):
         self.V_ref = V_init
+        self._cool_cnt = 0
         self.po.reset(V_init)
 
 

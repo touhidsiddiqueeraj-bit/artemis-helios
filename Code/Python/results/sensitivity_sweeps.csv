@@ -1,0 +1,16 @@
+sweep,param_value,eta_track
+horizon,1,94.8210
+horizon,5,94.9496
+horizon,10,95.3027
+horizon,30,94.8986
+horizon,60,94.8326
+step,0.1,97.0607
+step,0.2,96.4796
+step,0.4,95.3897
+step,0.8,95.3027
+step,1.6,95.4821
+delay,0,95.3027
+delay,1,94.6592
+delay,5,93.2678
+delay,10,94.0169
+delay,20,93.8778

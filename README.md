@@ -1,6 +1,7 @@
 # Helios-Artemis
 
-A photovoltaic (PV) system research project implementing a dual-microcontroller predictive Maximum Power Point Tracking (MPPT) controller for solar energy optimization.
+A photovoltaic (PV) system research project implementing a dual-microcontroller predictive Maximum Power Point Tracking (MPPT) controller
+for solar energy optimization.
 
 ## Overview
 
@@ -8,7 +9,8 @@ This project presents the Helios-Artemis system, which partitions the MPPT probl
 - **Helios (ESP32-S3):** LSTM irradiance forecasting, local retraining, SD logging
 - **Artemis (STM32F103):** real-time VS-P&O MPPT, 50 kHz PWM generation, battery management
 
-Validated by a field logger deployed in Sylhet, Bangladesh, with the full study written up as an IJPEDS revision (manuscript `25195-52952-1-SM-REVISED`).
+Validated by a field logger deployed in Sylhet, Bangladesh, with the full study written up as an IJPEDS revision 
+(manuscript `25195-52952-1-SM-REVISED`).
 
 ## Manuscript deliverables (current)
 
