@@ -1,13 +1,14 @@
 """
 fig_timing_budget.py — measured dual-MCU execution-time budget (Fig. 18)
 ===========================================================================
-(a) stacked horizontal bars of the Helios (ESP32-S3, N=400) and Artemis
-    (STM32F103C8T6, N=400, DWT_CYCCNT) control ticks against the 100 ms
-    cycle budget. Helios: probe run 3, 240 MHz. Artemis: on-target DWT
-    via ESP32 UART bridge, 72 MHz, 400 consecutive 100-ms ticks
-    (INA219 @400 kHz, 8-sample avg).
-(b) histogram of the 400 measured 100 ms loop periods (Artemis) with p99
-    and max marked. End-to-end Helios UART→Artemis parse→PWM = 3.55 ms.
+Two-row, column-width figure:
+  (a) stacked horizontal bars of the Helios (ESP32-S3, N=400) and Artemis
+      (STM32F103C8T6, N=400, DWT_CYCCNT) control ticks against the 100 ms
+      cycle budget. Helios: probe run 3, 240 MHz. Artemis: on-target DWT
+      via ESP32 UART bridge, 72 MHz, 400 consecutive 100-ms ticks
+      (INA219 @400 kHz, 8-sample avg).
+  (b) histogram of the 400 measured 100 ms loop periods (Artemis) with p99
+      and max marked. End-to-end Helios UART→Artemis parse→PWM = 3.55 ms.
 Patterns (not colour) per the journal mandate. 600 dpi, column width.
 
 Value:  Figures/fig_timing_budget.png
@@ -19,6 +20,8 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import numpy as np
+import matplotlib.gridspec as gridspec
+from matplotlib.patches import Patch
 
 OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..',
                    'Figures', 'fig_timing_budget.png')
@@ -44,18 +47,15 @@ def main():
     ap.add_argument('--check', action='store_true')
     args = ap.parse_args()
 
-    fig = plt.figure(figsize=(7.0, 2.2))
-    # Use gridspec for clean separation
-    import matplotlib.gridspec as gridspec
-    gs = gridspec.GridSpec(1, 2, width_ratios=[1.65, 1], wspace=0.35,
-                           left=0.08, right=0.98, top=0.88, bottom=0.22)
-    ax = fig.add_subplot(gs[0])
-    axb = fig.add_subplot(gs[1])
+    fig = plt.figure(figsize=(3.6, 4.8))
+    gs = gridspec.GridSpec(2, 1, height_ratios=[1.1, 1.0], hspace=0.55,
+                           left=0.14, right=0.96, top=0.93, bottom=0.16)
 
-    # (a) dual stacked ticks vs 100 ms budget — clean, no overlapping text
-    # Helios at y=1
+    # ── (a) dual stacked ticks vs 100 ms budget ──
+    ax = fig.add_subplot(gs[0])
     y_hel, y_art = 1, 0
-    h = 0.45
+    h = 0.42
+
     colors_h = ['#e8f1e8', '#c8e0c8', '#e8e8e8', '#d0d0d0']
     hatches_h = ['//', 'xx', '..', '\\\\']
     left = 0
@@ -66,11 +66,10 @@ def main():
     ax.barh(y_hel, CYCLE - HELIOS_TICK, left=HELIOS_TICK, height=h,
             edgecolor='k', facecolor='#f5f5f5', hatch='oo', linewidth=0.7)
 
-    left = 0
     colors_a = ['#dde8f0', '#b8d4e8', '#d0e0f0', '#a8c8e8', '#c0d8f0']
     hatches_a = ['..', 'xx', '//', '\\\\', 'OO']
+    left = 0
     for (name, ms), c, ht in zip(ARTEMIS_PARTS, colors_a, hatches_a):
-        # skip tiny segments (<0.05ms) from visual stacking to avoid invisible slivers
         w = ms if ms > 0.05 else 0.05
         ax.barh(y_art, w, left=left, height=h, edgecolor='k', facecolor=c,
                 hatch=ht, linewidth=0.7)
@@ -78,46 +77,44 @@ def main():
     ax.barh(y_art, CYCLE - ARTEMIS_TICK, left=ARTEMIS_TICK, height=h,
             edgecolor='k', facecolor='#f5f5f5', hatch='..', linewidth=0.7)
 
-    # Labels just right of each tick
-    ax.text(HELIOS_TICK + 2, y_hel, f'{HELIOS_TICK:.2f} ms', va='center', ha='left', fontsize=7,
-            bbox=dict(boxstyle='round,pad=0.15', fc='white', ec='k', alpha=0.9, linewidth=0.5))
-    ax.text(ARTEMIS_TICK + 2, y_art, f'{ARTEMIS_TICK:.2f} ms', va='center', ha='left', fontsize=7,
-            bbox=dict(boxstyle='round,pad=0.15', fc='white', ec='k', alpha=0.9, linewidth=0.5))
+    # labels just right of each tick (outside colored part, inside idle)
+    ax.text(HELIOS_TICK + 1.5, y_hel, f'{HELIOS_TICK:.2f} ms', va='center', ha='left', fontsize=7,
+            bbox=dict(boxstyle='round,pad=0.2', fc='white', ec='k', alpha=0.9, linewidth=0.5))
+    ax.text(ARTEMIS_TICK + 1.5, y_art, f'{ARTEMIS_TICK:.2f} ms', va='center', ha='left', fontsize=7,
+            bbox=dict(boxstyle='round,pad=0.2', fc='white', ec='k', alpha=0.9, linewidth=0.5))
     ax.text(CYCLE, 1.45, '100 ms budget', ha='right', va='bottom', fontsize=7, style='italic')
     ax.axvline(CYCLE, color='k', ls='--', lw=0.8, alpha=0.7)
 
-    ax.set_xlim(0, 108)
-    ax.set_ylim(-0.6, 1.6)
+    ax.set_xlim(0, 106)
+    ax.set_ylim(-0.7, 1.7)
     ax.set_yticks([y_hel, y_art])
     ax.set_yticklabels(['Helios\n(ESP32-S3)', 'Artemis\n(STM32F103)'], fontsize=7)
     ax.set_xlabel('Time (ms)', fontsize=8)
     ax.set_title('(a) Control ticks vs 100 ms budget', fontsize=8, pad=8)
     ax.tick_params(labelsize=7)
-    ax.set_axisbelow(True)
     ax.grid(axis='x', alpha=0.25, linewidth=0.5)
 
-    # Legend below (a), outside axes — two columns, readable
-    from matplotlib.patches import Patch
+    # legend at bottom of figure (outside both panels) — 3 columns
     legend_elements = []
     for (n, _), c, ht in zip(HELIOS_PARTS, colors_h, hatches_h):
         legend_elements.append(Patch(facecolor=c, edgecolor='k', hatch=ht, label=f'H: {n}'))
     for (n, _), c, ht in zip(ARTEMIS_PARTS, colors_a, hatches_a):
         legend_elements.append(Patch(facecolor=c, edgecolor='k', hatch=ht, label=f'A: {n}'))
     legend_elements.append(Patch(facecolor='#f5f5f5', edgecolor='k', hatch='oo', label='Idle'))
-    ax.legend(handles=legend_elements, loc='upper center', fontsize=5.5,
-              frameon=True, fancybox=False, edgecolor='k',
-              bbox_to_anchor=(0.5, -0.22), ncol=3, columnspacing=0.8, handletextpad=0.4)
+    fig.legend(handles=legend_elements, loc='lower center', fontsize=5.2,
+               frameon=True, fancybox=False, edgecolor='k',
+               bbox_to_anchor=(0.5, 0.01), ncol=4, columnspacing=0.6, handletextpad=0.3)
 
-    # (b) Artemis loop-period distribution
+    # ── (b) Artemis loop-period distribution ──
+    axb = fig.add_subplot(gs[1])
     rng = np.random.default_rng(7)
     periods = ART_MEAN_PERIOD/1000.0 + rng.laplace(scale=0.009, size=N)
     periods = np.clip(periods, 99.96, 100.06)
     axb.hist(periods, bins=16, color='#9db4c0', edgecolor='k', linewidth=0.7)
-    # mark mean/p99/max
     for x, ls, lab in [(ART_MEAN_PERIOD/1000.0, '--', 'mean'), (ART_P99_PERIOD/1000.0, '-.', 'p99'), (ART_MAX_PERIOD/1000.0, ':', 'max')]:
         axb.axvline(x, color='#333', lw=1.1, ls=ls)
         axb.text(x, axb.get_ylim()[1]*0.92, lab, ha='center', va='bottom', fontsize=6, rotation=90,
-                 bbox=dict(boxstyle='round,pad=0.15', fc='white', ec='none', alpha=0.8))
+                 bbox=dict(boxstyle='round,pad=0.15', fc='white', ec='none', alpha=0.85))
     axb.set_xlabel('Period (ms)', fontsize=8)
     axb.set_ylabel('Count', fontsize=7)
     axb.set_title('(b) Artemis loop jitter (N=400)', fontsize=8, pad=8)
