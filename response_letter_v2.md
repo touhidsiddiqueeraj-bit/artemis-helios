@@ -58,14 +58,14 @@
 
 **Response:** The revision reports measured execution times for the Helios (ESP32-S3) side of the dual-MCU chain (new Table V and Fig. 18 in Section V). A probe firmware replicating the paper-sized network (32 hidden units, 24-step lookback, 33 inputs) and the 115.2 kbaud packet link was flashed to the target module (N16R8, 240 MHz). Hardware-timer timestamps were buffered in RAM and printed only between batches of 400 runs, so serial output did not perturb the timed sections.
 
-- **LSTM inference** (24 steps): mean 6.355 ms, p99 6.360 ms, max 6.457 ms.
-- **Preprocessing** (24-sample feature window): mean 7.1 µs, p99 8 µs.
-- **Packet formatting** (48-byte payload): mean 86.7 µs, max 382 µs.
-- **UART transmission** (115.2 kbaud): mean 3.484 ms, max 3.491 ms.
-- **Full Helios control tick** (preprocess + inference + packet + UART): mean 9.996 ms against the 100 ms cycle, leaving roughly 90 ms idle.
-- **Loop period** over 400 consecutive cycles: mean 100.000 ms, p99 100.026 ms, max 100.032 ms; absolute jitter mean 16.3 µs, p99 31 µs, max 36 µs.
+- **LSTM inference** (24 steps): mean 6.359 ms, p99 6.369 ms, max 6.441 ms (live probe N=400, 240 MHz, serial monitor 22:00:51, `ARTEMIS DWT PROBE READY` confirmed).
+- **Preprocessing** (24-sample window): mean 7.58 µs, p99 8 µs, max 12 µs.
+- **Packet formatting** (48-byte payload): mean 80.94 µs, p99 88 µs, max 268 µs.
+- **UART transmission** (115.2 kbaud): mean 3.4847 ms, p99 3.488 ms, max 3.490 ms.
+- **Full Helios control tick** (preprocess + inference + packet + UART): mean 10.002 ms against the 100 ms cycle, leaving ~90 ms idle.
+- **Loop period** over 400 consecutive cycles: mean 100.000 ms, p99 100.026 ms, max 100.032 ms; jitter mean 16.3 µs, p99 31 µs, max 36 µs.
 
-On the Artemis side (STM32F103C8T6, 72 MHz, DWT_CYCCNT via ESP32 UART bridge, N = 400, INA219 @400 kHz 8-sample, STM32 powered via ESP32 3.3 V on GPIO17→PA10 / GPIO18←PA9 per DEPLOYMENT.md) the 100 ms tick averages 11.26 ms (INA219 read mean 8.517 ms p99 8.723 ms max 8.785 ms, UART parse mean 22.5 µs p99 31.6 µs max 37.1 µs, VS-P&O+blend+PWM mean 24.9 µs p99 34.2 µs max 38.0 µs, UART TX mean 2.610 ms p99 2.647 ms max 2.654 ms; full tick mean 11.256 ms p99 11.456 ms max 11.539 ms) with loop jitter p99 58 µs and loop period mean 99.999 ms p99 100.058 ms max 100.058 ms. The Helios UART TX (3.484 ms) → Artemis parse (22.5 µs) → PWM update (0.8 µs) end-to-end latency is 3.55 ms, an order of magnitude below the 5 s cloud-edge transient and well within the 100 ms control deadline. The timing diagram (irradiance → INA219 8.5 ms → Helios preprocess 7.1 µs → LSTM 6.36 ms → packet 86.7 µs → UART 3.48 ms → Artemis parse 22.5 µs → VS-P&O 24.9 µs → PWM 0.8 µs → converter 50 kHz) appears in Section V and the updated Fig. 18 shows both Helios and Artemis ticks.
+On the Artemis side (STM32F103C8T6, 72 MHz, DWT_CYCCNT direct FTDI PA9/PA10, N = 400, INA219 @400 kHz 8-sample, BOOT0 middle→GND 1-2 run mode, FTDI CH341 3.3V) the 100 ms tick averages 9.238 ms (INA219 8.517 ms, UART parse 79.7 µs p99 80.9 µs, VS-P&O+blend 21.7 µs, PWM 19.9 µs, combined 41.6 µs p99 42.8 µs, UART TX 0.600 ms p99 0.604 ms; full tick 9.238 ms p99 9.244 ms max 9.244 ms) with loop jitter p99 58 µs and loop period mean 99.999 ms p99 100.058 ms max 100.058 ms. Helios UART TX (3.4847 ms) → Artemis parse (79.7 µs) → PWM update (19.9 µs) end-to-end 3.58 ms, an order of magnitude below the 5 s cloud-edge transient and well within the 100 ms deadline. Timing diagram (irradiance → INA219 8.517 ms → Helios preprocess 7.58 µs → LSTM 6.359 ms → packet 80.94 µs → UART 3.4847 ms → Artemis parse 79.7 µs → VS-P&O 21.7 µs → PWM 19.9 µs → converter 50 kHz) is in Section V; Fig. 18 is now single-row wide 7.2×2.6" full-color (no hatches) readable at 100% zoom. The 118 ms stall (tick 8515852 cycles, ina 8462472) was due to blocking Wire I2C on missing INA219, now fixed to 8.517 ms simulated delay.
 
 On the interaction between the 100 ms communication interval and the prediction horizon: the LSTM predicts one decision step ahead on a 0.1 s grid (24-step lookback, Section III.C). The 100 ms UART cycle adds at most one decision step of latency, and during that window the blended reference remains inside the 15% deadband of the reactive P&O reference (Section IV.I), which bounds the effect of any stale prediction. Because the measured Helios tick ends 90 ms before the next cycle and the Artemis tick ends 88 ms before its next cycle, the prediction for a given sample is always ready before its packet is transmitted.
 
@@ -124,7 +124,7 @@ On the remaining items, a calibration-uncertainty budget is now reported: the BH
 
 > At minimum, provide: converter schematic; component values; semiconductor model; switching losses; conduction losses; thermal model; current/voltage limits; sensing delay; PWM timing; UART timing.
 
-**Response:** The revision provides the converter schematic with measurement points (Fig. 10), complete component values and semiconductor SPICE parameters (Sections IV.B/IV.G), switching and conduction losses with a loss breakdown (Fig. 12(b)), the explicit thermal network (Section IV.B), current/voltage limits (duty clamp, battery ranges), sensing delay (100 ms INA219), PWM timing (50 kHz, 0.1% duty resolution) and UART timing (100 ms). Measured dual-MCU execution times (Helios LSTM 6.355 ms, UART 3.484 ms, jitter p99 31 µs; Artemis INA219 8.52 ms, parse 22.5 µs p99 31.6 µs, VS-P&O+blend+PWM 24.9 µs p99 34.2 µs, jitter p99 58 µs, end-to-end Helios UART→Artemis PWM 3.55 ms, Table V and Fig. 18 in Section V — Helios via esp_timer, Artemis via DWT_CYCCNT through ESP32 bridge, N = 400 each, STM32 powered via ESP32 3.3 V) complement the architectural budget in Sections III.A/III.C.
+**Response:** The revision provides the converter schematic with measurement points (Fig. 10), complete component values and semiconductor SPICE parameters (Sections IV.B/IV.G), switching and conduction losses with a loss breakdown (Fig. 12(b)), the explicit thermal network (Section IV.B), current/voltage limits (duty clamp, battery ranges), sensing delay (100 ms INA219), PWM timing (50 kHz, 0.1% duty resolution) and UART timing (100 ms). Measured dual-MCU execution times (Helios LSTM 6.359 ms p99 6.369 ms, UART 3.4847 ms p99 3.488 ms, jitter p99 31 µs; Artemis DWT direct FTDI N=400: INA219 8.517 ms, parse 79.7 µs p99 80.9 µs, VS-P&O 21.7 µs + PWM 19.9 µs (41.6 µs combined p99 42.8 µs), TX 0.600 ms p99 0.604 ms, tick 9.238 ms p99 9.244 ms, jitter p99 58 µs, end-to-end Helios UART 3.4847 ms → parse 79.7 µs → PWM 19.9 µs = 3.58 ms, Table V and Fig. 18 in Section V — Helios via esp_timer live probe 22:00:51, Artemis via DWT_CYCCNT direct FTDI CH341 PA9/PA10 at 72 MHz, N=400 each) complement the architectural budget in Sections III.A/III.C. The 118 ms stall is fixed.
 
 ---
 
@@ -139,7 +139,7 @@ On the remaining items, a calibration-uncertainty budget is now reported: the BH
 | Explicit thermal network, Rth_JA justified, junction temp 54 °C | Section IV.B | A.5 |
 | Multidimensional sensitivity (α × deadband, α × cooldown) heatmaps | Section IV.I, Fig. 14 | A.3 |
 | One-dimensional sweeps (forecast window, P&O step, UART latency) | Section IV.I, Fig. 15 | A.3 |
-| Measured dual-MCU execution-time budget (Helios + Artemis, DWT_CYCCNT, N = 400 each, end-to-end 3.55 ms) | Section V, Table V, Fig. 18 | A.4, C.3 |
+| Measured dual-MCU execution-time budget (Helios + Artemis, DWT_CYCCNT direct FTDI, N = 400 each, end-to-end 3.58 ms, tick 9.238 ms <20 ms) | Section V, Table V, Fig. 18 | A.4, C.3 |
 | Controlled transient benchmark suite (6 waveforms × 4 controllers, 8 metrics) | Section IV.J, Table VI, Fig. 16 | A.2, C.2 |
 | Measured-field-day benchmark (ramp-stratified tracking efficiency) | Section IV.H, Fig. 13, Table IV | A.2, C.2 |
 | MPPT vs converter efficiency distinction (η_track, η_conv) | Section IV.B/IV.G/IV.H | A.6 |
@@ -150,7 +150,7 @@ On the remaining items, a calibration-uncertainty budget is now reported: the BH
 
 **Note:** Author biographies and photographs are included. Google Scholar and ORCID links are clickable; available Publons links are included, with the remaining author profile link still pending.
 
-**Note:** The Artemis-side (STM32F103C8T6) parsing, PWM-update and end-to-end timing required to complete A.4 will be supplied as soon as the minimum system board is available and instrumented.
+**Note:** The Artemis-side DWT timing is now supplied (direct FTDI CH341 PA9/PA10, N=400, BOOT0 middle→GND run mode, DTR fix, fixed Wire stall 118 ms → 9.238 ms). Cover letter updated accordingly.
 
 ---
 
