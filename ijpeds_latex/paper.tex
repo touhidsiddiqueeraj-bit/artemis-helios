@@ -124,7 +124,7 @@ Email: touhidsiddiqueeraj@gmail.com
 
 The IDCOL Solar Home System (SHS) programme \cite{ahmed2020} has electrified more than six million rural Bangladeshi households. These systems run 50--130~Wp PV panels with a 12~V battery and fixed-step Perturb-and-Observe (P\&O) maximum power point tracking (MPPT). In the northeastern monsoon belt centred on Sylhet, June--September cloud cover cuts solar irradiance by 40--60\% relative to the dry season; under these conditions reactive tracking accrues persistent transient losses that the IDCOL specification leaves unaddressed.
 
-Plain P\&O \cite{debrito2013,reisi2013,subudhi2013,femia2005} reacts to irradiance changes only after they happen. Variable-step P\&O (VS-P\&O) \cite{alik2018} cuts steady-state oscillation but stays reactive under fast transients. Incremental conductance (INC) \cite{sera2013} tracks $dI/dV = -I/V$ well in steady state, yet falls back to P\&O-level tracking under rapid changes. LSTM networks \cite{pengcheng2021,bandara2024,michael2022} model non-linear irradiance dynamics accurately; Bandara et al. \cite{bandara2024} reported 2.1--3.8\% efficiency gain from a 50-unit LSTM, and Mazumdar et al. \cite{mazumdar2024} reached $R^2 = 0.952$ on Indian data. However, existing LSTM-MPPT designs place prediction and control on a single MCU, rely on unvalidated synthetic irradiance, and need cloud connectivity to retrain \cite{boubaker2023,aldulaimi2025}. ANFIS \cite{aldulaimi2025} and reinforcement-learning agents \cite{kofinas2017} are computationally incompatible with sub-100~ms cycles. NASA POWER and SREDA \cite{nasa2024,sreda2019} document 4.5--5.0~kWh/m$^2$/day for Bangladesh; Hossion \cite{hossion2024} reports a 79\% system-level PR for a 122.4~kW Dhaka rooftop, encompassing losses beyond MPPT tracking alone.
+Plain P\&O \cite{debrito2013,reisi2013,subudhi2013,femia2005} reacts to irradiance changes only after they happen; Sera et al. \cite{sera2013} quantified 15--30\% losses under cloud transients. Variable-step P\&O (VS-P\&O) \cite{alik2018} cuts steady-state oscillation but stays reactive under fast transients. Incremental conductance (INC) \cite{sera2013} tracks $dI/dV = -I/V$ well in steady state, yet falls back to P\&O-level tracking under rapid changes. LSTM networks \cite{pengcheng2021,bandara2024,michael2022} model non-linear irradiance dynamics accurately; Bandara et al. \cite{bandara2024} reported 2.1--3.8\% efficiency gain from a 50-unit LSTM, and Mazumdar et al. \cite{mazumdar2024} reached $R^2 = 0.952$ on Indian data. However, existing LSTM-MPPT designs place prediction and control on a single MCU, rely on unvalidated synthetic irradiance, and need cloud connectivity to retrain \cite{boubaker2023,aldulaimi2025}. MPPT techniques have been reviewed extensively \cite{sarkar2016,kumari2021}; CNN-LSTM hybrids \cite{agga2022} forecast short-term PV power accurately; off-grid solar installations in Bangladesh face unique performance challenges \cite{aziz2021}. ANFIS \cite{aldulaimi2025} and reinforcement-learning agents \cite{kofinas2017} are computationally incompatible with sub-100~ms cycles; neural-network estimators \cite{hiyama1997} share this limitation. NASA POWER and SREDA \cite{nasa2024,sreda2019} document 4.5--5.0~kWh/m$^2$/day for Bangladesh \cite{masters2013}; Hossion \cite{hossion2024} reports a 79\% system-level PR for a 122.4~kW Dhaka rooftop, encompassing losses beyond MPPT tracking alone. The deployment context is well characterised: programme-level assessments \cite{cabraal2021}, economic viability \cite{sarker2020,chakrabarty2011}, technical appraisal \cite{chowdhury2011}, energy decentralisation \cite{khan2020}, deployment barriers \cite{saim2025}, disaster resilience \cite{amin2021}, and welfare effects \cite{diallo2020} frame the operational constraints motivating this work.
 
 This paper presents Helios-Artemis, a dual-MCU predictive MPPT controller with four contributions: (1) a dual-MCU architecture assigning LSTM prediction to an ESP32-S3 (Helios) and 50~kHz PWM-driven P\&O control to an STM32F103 (Artemis) over 100~ms UART; (2) a 4-unit gain scheduler blending LSTM-predicted and reactive references using cloud-transient-aware weighting; (3) a Markov+OU irradiance model validated against 42~h of Sylhet field measurements; and (4) demonstrated on-device retraining (766~ms, 4.7\% MAE improvement) without cloud dependency. The paper does not claim full field validation of the controller.
 
@@ -209,14 +209,14 @@ All controllers were evaluated under strictly identical conditions: same PV mode
 
 \begin{figure}[H]
 \centering
-\includegraphics[height=7cm]{figs/fig05.png}
+\includegraphics[height=6cm]{figs/fig05.png}
 \vspace{.5em}
 \caption{Full-day simulation --- Sylhet July (seed 23)}
 \end{figure}
 
 \begin{figure}[H]
 \centering
-\includegraphics[height=6cm]{figs/fig06.png}
+\includegraphics[height=5cm]{figs/fig06.png}
 \vspace{.5em}
 \caption{30-day Monte Carlo distribution ($\mu=94.0\%$, $\sigma=0.6\%$)}
 \end{figure}
@@ -268,7 +268,7 @@ The 17 Aug 2026 field irradiance trace (5~s sampling, peak 470.8~W/m$^2$) was re
 
 \begin{figure}[H]
 \centering
-\includegraphics[height=7.5cm]{figs/fig13.png}
+\includegraphics[height=6.5cm]{figs/fig13.png}
 \vspace{.5em}
 \caption{Efficiency evidence on measured monsoon day (17 Aug 2026)}
 \end{figure}
@@ -405,14 +405,14 @@ End-to-end UART$\rightarrow$PWM & 3.58~ms & --- & --- \\
 
 \begin{figure}[H]
 \centering
-\includegraphics[height=8.5cm]{figs/fig18.png}
+\includegraphics[height=7.5cm]{figs/fig18.png}
 \vspace{.5em}
 \caption{Measured dual-MCU execution-time budget ($N=400$): (a) ticks vs 100~ms, (b) Artemis jitter}
 \end{figure}
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=8.5cm]{figs/fig19.png}
+\includegraphics[width=7.5cm]{figs/fig19.png}
 \vspace{.5em}
 \caption{Signal-path timing diagram, single 100~ms cycle (not to scale for $\mu$s; idle ${\sim}86$~ms)}
 \end{figure}
