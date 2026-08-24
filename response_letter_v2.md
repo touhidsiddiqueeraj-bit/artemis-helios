@@ -12,9 +12,8 @@
 2. **References** — 37 entries, IEEE style, sequential citation order with DOIs where available.
 3. **Tables as tables** — all tables are native LaTeX tables (Table 1–6), not figures.
 4. **Patterns in figures** — figures use distinct colours and line styles; the controlled-transient benchmark (Fig. 12) uses pattern-coded bars per the journal mandate.
-5. **Graphical abstract** — inserted on page 1.
-6. **Figure numbering** — all 17 figures numbered sequentially in order of appearance.
-7. **Author biographies** — AUTHOR BIOGRAPHIES section with author photographs and clickable ORCID, Google Scholar, and Web of Science ResearcherID (Publons) links for both authors.
+5. **Figure numbering** — all 17 figures numbered sequentially in order of appearance.
+6. **Author biographies** — AUTHOR BIOGRAPHIES section with author photographs and clickable ORCID, Google Scholar, and Web of Science ResearcherID (Publons) links for both authors.
 
 ---
 
@@ -59,7 +58,7 @@
 - **Full Helios control tick:** mean 10.002 ms against the 100 ms cycle, leaving ~90 ms idle.
 - **Loop period** over 400 consecutive cycles: mean 100.000 ms, p99 100.026 ms, max 100.032 ms; jitter mean 16.3 µs, p99 31 µs, max 36 µs.
 
-On the Artemis side (STM32F103C8T6, 72 MHz, DWT_CYCCNT, N = 400, INA219 @400 kHz 8-sample) the 100 ms tick averages 9.24 ms (INA219 8.517 ms, UART parse 79.7 µs, VS-P\&O+blend 21.7 µs, PWM update 19.9 µs, UART TX 0.600 ms; p99 9.24 ms) with loop jitter p99 58 µs. The Helios UART TX (3.485 ms) → Artemis parse (79.7 µs) → PWM update (19.9 µs) end-to-end latency is 3.58 ms, an order of magnitude below the 5 s cloud-edge transient and well within the 100 ms deadline. Fig. 15 shows the signal-path timing diagram for a single 100 ms cycle.
+On the Artemis side (STM32F103C8T6, 72 MHz, DWT_CYCCNT, N = 400, INA219 @400 kHz 8-sample) the 100 ms tick averages 9.24 ms (INA219 8.517 ms, UART parse 79.7 µs, VS-P\&O + blend + PWM 41.6 µs, UART TX 0.600 ms; p99 9.24 ms) with loop jitter p99 58 µs. The Helios UART TX (3.485 ms) → Artemis parse (79.7 µs) → PWM update (19.9 µs) end-to-end latency is 3.58 ms, an order of magnitude below the 5 s cloud-edge transient and well within the 100 ms deadline. Fig. 15 shows the signal-path timing diagram for a single 100 ms cycle.
 
 On the interaction between the 100 ms communication interval and the prediction horizon: the LSTM predicts one decision step ahead on a 0.1 s grid (24-step lookback, Section 2.2). The 100 ms UART cycle adds at most one decision step of latency, and during that window the blended reference remains inside the 15% deadband of the reactive P\&O reference (Section 3.6), which bounds the effect of any stale prediction.
 
@@ -73,7 +72,7 @@ On the interaction between the 100 ms communication interval and the prediction 
 
 > The equation for MPPT tracking efficiency must be explicitly stated. A separate metric should be reported for converter efficiency.
 
-**Response:** The manuscript distinguishes: (i) MPPT tracking efficiency $\eta_{track} = \sum P_{PV}/\sum P_{MPP}$; (ii) converter efficiency $\eta_{conv} = P_{out}/P_{in}$ (98.0% at 3.8 A, Fig. 8(a)); and (iii) system-level PR (79%, Hossion \cite{hossion2024}). Table 3 maps each reported efficiency figure to its exact experimental condition, resolving the distinction between Monte Carlo, annual, measured-day, and controlled-benchmark scenarios.
+**Response:** The manuscript distinguishes: (i) MPPT tracking efficiency $\eta_{track} = \sum P_{PV}/\sum P_{MPP}$; (ii) converter efficiency $\eta_{conv} = P_{out}/P_{in}$ (98.0% at 3.8 A, Fig. 8(a)); and (iii) system-level PR (79%, Hossion [22]). Table 3 maps each reported efficiency figure to its exact experimental condition, resolving the distinction between Monte Carlo, annual, measured-day, and controlled-benchmark scenarios.
 
 ---
 
@@ -138,7 +137,7 @@ A calibration-uncertainty budget is now reported: BH1750 datasheet accuracy (±2
 
 ---
 
-All reviewer concerns are now addressed in the revised manuscript. The Artemis-side timing is fully supplied (DWT\_CYCCNT, N = 400). Both author Publons/WoS links are provided. Scopus Author IDs are not yet available for either author, as Scopus requires a minimum of two prior indexed publications before an author profile is automatically created; the profiles will be linked as soon as they become available. The revised manuscript has been reformatted according to IJPEDS standards using the official `iaesarticle` LaTeX template and shortened to 12 pages (from 15 pages in the previous submission round).
+All reviewer concerns are now addressed in the revised manuscript. The Artemis-side timing is fully supplied (DWT\_CYCCNT, N = 400). Both author Publons/WoS links are provided. Scopus author profiles have not yet been created for either author; the profiles will be linked as soon as they become available. The revised manuscript has been reformatted according to IJPEDS standards using the official `iaesarticle` LaTeX template and shortened to 12 pages (from 15 pages in the previous submission round).
 
 Yours sincerely,
 
