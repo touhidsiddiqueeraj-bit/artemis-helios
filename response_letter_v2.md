@@ -138,7 +138,7 @@ A calibration-uncertainty budget is now reported: BH1750 datasheet accuracy (±2
 
 ---
 
-All reviewer concerns are now addressed in the revised manuscript. The Artemis-side timing is fully supplied (DWT\_CYCCNT, N = 400). Both author Publons/WoS links are provided. The revised manuscript is submitted as a 12-page LaTeX PDF using the official IJPEDS `iaesarticle` template.
+All reviewer concerns are now addressed in the revised manuscript. The Artemis-side timing is fully supplied (DWT\_CYCCNT, N = 400). Both author Publons/WoS links are provided. Scopus Author IDs are not yet available for either author, as Scopus requires a minimum of two prior indexed publications before an author profile is automatically created; the profiles will be linked as soon as they become available. The revised manuscript has been reformatted according to IJPEDS standards using the official `iaesarticle` LaTeX template and shortened to 12 pages (from 15 pages in the previous submission round).
 
 Yours sincerely,
 
