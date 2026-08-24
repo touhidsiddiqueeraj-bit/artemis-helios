@@ -58,7 +58,7 @@
 - **Full Helios control tick:** mean 10.002 ms against the 100 ms cycle, leaving ~90 ms idle.
 - **Loop period** over 400 consecutive cycles: mean 100.000 ms, p99 100.026 ms, max 100.032 ms; jitter mean 16.3 µs, p99 31 µs, max 36 µs.
 
-On the Artemis side (STM32F103C8T6, 72 MHz, DWT_CYCCNT, N = 400, INA219 @400 kHz 8-sample) the 100 ms tick averages 9.24 ms (INA219 8.517 ms, UART parse 79.7 µs, VS-P\&O + blend + PWM 41.6 µs, UART TX 0.600 ms; p99 9.24 ms) with loop jitter p99 58 µs. The Helios UART TX (3.485 ms) → Artemis parse (79.7 µs) → PWM update (19.9 µs) end-to-end latency is 3.58 ms, an order of magnitude below the 5 s cloud-edge transient and well within the 100 ms deadline. Fig. 15 shows the signal-path timing diagram for a single 100 ms cycle.
+On the Artemis side (STM32F103C8T6, 72 MHz, DWT_CYCCNT, N = 400, INA219 @400 kHz 8-sample) the 100 ms tick averages 9.24 ms (INA219 8.517 ms, UART parse 79.7 µs, VS-P\&O + blend + PWM 41.6 µs, UART TX 0.600 ms; p99 9.24 ms) with loop jitter p99 58 µs. The Helios UART TX (3.485 ms) → Artemis parse and PWM update (41.6 µs, which includes VS-P\&O + blend + PWM) end-to-end latency is 3.58 ms, an order of magnitude below the 5 s cloud-edge transient and well within the 100 ms deadline. Fig. 15 shows the signal-path timing diagram for a single 100 ms cycle.
 
 On the interaction between the 100 ms communication interval and the prediction horizon: the LSTM predicts one decision step ahead on a 0.1 s grid (24-step lookback, Section 2.2). The 100 ms UART cycle adds at most one decision step of latency, and during that window the blended reference remains inside the 15% deadband of the reactive P\&O reference (Section 3.6), which bounds the effect of any stale prediction.
 
