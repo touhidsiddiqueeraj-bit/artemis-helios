@@ -42,8 +42,9 @@
 \vspace{.5em}}
 
 \author[1]{\bfseries Hussain Touhid Siddiquee}
-\author[1]{\bfseries Orpon Chanda}
+\author[2]{\bfseries Orpon Chanda}
 \affil[1]{Department of Electrical and Electronic Engineering, Leading University, Sylhet, Bangladesh}
+\affil[2]{Department of Electrical and Electronic Engineering, Leading University, Sylhet, Bangladesh}
 
 \title{Helios-Artemis: Dual-Microcontroller Predictive Solar MPPT with On-Device LSTM Retraining for Sylhet Monsoon SHS}
 \shorttitle{Helios-Artemis: Dual-MCU Predictive MPPT ... (H. T. Siddiquee)}
@@ -205,7 +206,7 @@ Architecture & $R^2$ & MAE (W\,m$^{-2}$) & RMSE (W\,m$^{-2}$) \\
 
 \subsection{Monte Carlo and Full-Day Simulation}
 
-All controllers were evaluated under strictly identical conditions: same PV model, 100~ms sampling, converter limits, and initialization. No per-controller re-tuning. The 30-day Monte Carlo (July, varying Markov seed) yields mean $\eta_{MPPT} = 94.0\%$, $\sigma = 0.6\%$, 95\% CI [92.9, 94.9\%], consistent with hardware VS-P\&O ranges \cite{tey2014,esram2007}. Full-day simulation confirms: peak GHI 744~W/m$^2$, SoC 30\%$\rightarrow$100\%, $T_J$ peak 54$^\circ$C (from 1.41~W total loss --- MOSFET conduction 0.32~W, switching and body-diode losses, inductor DCR --- over $R_{th\_JA} \approx 13.5\,^\circ$C/W), $V_{bat}$ 12.41--13.61~V.
+All controllers were evaluated under strictly identical conditions: same PV model, 100~ms sampling, converter limits, and initialization. No per-controller re-tuning. The 30-day Monte Carlo (July, varying Markov seed) yields mean $\eta_{MPPT} = 94.0\%$, $\sigma = 0.6\%$, 95\% CI [92.9, 94.9\%], consistent with hardware VS-P\&O ranges \cite{tey2014,esram2007}. Full-day simulation confirms: peak GHI 744~W/m$^2$, SoC 30\%$\rightarrow$100\%, $T_J$ peak 54$^\circ$C (from 1.41~W total loss --- MOSFET conduction 0.32~W, switching and body-diode losses, inductor DCR --- over the thermal stack $R_{th\_JA} = R_{th\_JC} + R_{th\_CS} + R_{th\_SA} = 0.44$ (IRFB4110, TO-220, datasheet) $+ 1.0$ (thermal interface material) $+ 12.0$ (extruded heatsink, natural convection) $= 13.44 \approx 13.5\,^\circ$C/W at 35~$^\circ$C ambient), $V_{bat}$ 12.41--13.61~V.
 
 \begin{figure}[H]
 \centering
@@ -220,6 +221,26 @@ All controllers were evaluated under strictly identical conditions: same PV mode
 \vspace{.5em}
 \caption{30-day Monte Carlo distribution ($\mu=94.0\%$, $\sigma=0.6\%$)}
 \end{figure}
+
+Table~\ref{tab:scenarios} maps each tracking-efficiency figure reported in this paper to its exact experimental condition, addressing the distinction between Monte Carlo, annual, measured-day, and controlled-benchmark scenarios.
+
+\begin{table}[H]
+\centering
+\caption{Tracking efficiency across evaluation scenarios (Helios-Artemis vs plain P\&O)}
+\label{tab:scenarios}
+\small
+\begin{tabular}{lccc}
+\toprule
+Scenario & P\&O (\%) & Helios (\%) & Conditions \\
+\midrule
+Monsoon Monte Carlo (30d) & 70.7 & 94.0 $\pm$ 0.6 & Synthetic, CVI 0.85 \\
+Annual blend (365d equiv.) & 85.8 & 91.3 & Synthetic, mixed seasons \\
+Measured monsoon day & 81.9 & 93.3 & Real 5~s field irradiance \\
+Measured, high-var 20\% & 67.8 & 90.2 & Real, highest ramps \\
+Transient, stochastic & 89.5 & 95.1 & Synthetic, dt = 0.1~s \\
+\bottomrule
+\end{tabular}
+\end{table}
 
 \subsection{Validation Against Field Baselines and Field Logger}
 
@@ -311,7 +332,7 @@ Over the $\alpha \in [0.25, 0.45] \times$ deadband $\in [0.10, 0.20]$ region, ef
 
 \subsection{Controlled Transient Benchmark Suite}
 
-Six irradiance waveforms $\times$ four controllers under identical conditions, reporting tracking error, 2\%-band settling time, overshoot, undershoot, energy not captured, and MPP voltage error per waveform. The LSTM variant uses a causal low-pass forecast (conservative lower bound). Helios-Artemis meets or exceeds fixed-step P\&O on every waveform: 95.1\% vs 89.5\% (stochastic), 87.5\% vs 87.4\% (cloud edge), steps settle $\leq 1.8$~s. INC leads on the smooth synthetic surface (96.9\%) but this does not transfer to the field-informed Monte Carlo (23.3~pp gap). The 100\% VS-P\&O error is a single 0~W sample at the stochastic step, isolated to the synthetic model (Table~\ref{tab:transient}). Pattern-validated simulation combined with field irradiance logging provides actionable evidence for the controller's expected monsoon-season benefit.
+Six irradiance waveforms $\times$ four controllers under identical conditions, reporting tracking error, 2\%-band settling time, overshoot, undershoot, energy not captured, and MPP voltage error per waveform. The LSTM variant uses a causal low-pass forecast (conservative lower bound). Helios-Artemis meets or exceeds fixed-step P\&O on every waveform: 95.1\% vs 89.5\% (stochastic), 87.5\% vs 87.4\% (cloud edge), steps settle $\leq 1.8$~s. INC leads on the smooth synthetic surface (96.9\%) but this does not transfer to the field-informed Monte Carlo (23.3~pp gap). The 100\% VS-P\&O error is a single 0~W sample at the stochastic step: the VS-P\&O variable step, scaled by $|dP/dV|$, reaches its maximum at the step transition and drives the duty cycle to the clamp boundary, momentarily forcing the operating point to the open-circuit voltage extreme where $I_{pv} = 0$ (Table~\ref{tab:transient}). Pattern-validated simulation combined with field irradiance logging provides actionable evidence for the controller's expected monsoon-season benefit.
 
 \begin{figure}[H]
 \centering
