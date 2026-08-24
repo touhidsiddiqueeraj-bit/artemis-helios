@@ -366,22 +366,24 @@ def print_summary(results):
 
 def make_figure(results, step_down_trace, step_down_mpp):
     """fig17: (a) P_pv traces on step-down, (b) eta_track grouped bars."""
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(7.0, 3.5))
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(6.8, 2.8))
+    fig.patch.set_facecolor('white')
+    for _ax in (ax1, ax2):
+        _ax.set_facecolor('white')
     waves = list(results.keys())
     ctrls = list(results[waves[0]].keys())
 
     # (a) step-down P_pv traces
     t = step_down_trace[0]
     for ci, c in enumerate(ctrls):
-        ax1.plot(t, step_down_trace[1][c], color=CB_COLORS[ci],
-                 ls=LINESTYLES[ci], lw=1.2, label=c)
+        ax1.plot(t, step_down_trace[1][c], color=CB_COLORS[ci], lw=1.4, label=c)
     ax1.plot(t, step_down_mpp, 'k--', lw=1.0, label='$P_{MPP}$')
-    ax1.set_xlabel('Time (s)')
-    ax1.set_ylabel('$P_{pv}$ (W)')
-    ax1.set_title('(a) Step-down transient (1000$\\rightarrow$600 W/m$^2$)')
-    ax1.legend(fontsize=10, framealpha=0.9)
+    ax1.set_xlabel('Time (s)', fontsize=8, weight='bold')
+    ax1.set_ylabel('$P_{pv}$ (W)', fontsize=8, weight='bold')
+    ax1.set_title('(a) Step-down transient (1000$\\rightarrow$600 W/m$^2$)', fontsize=9, weight='bold')
+    ax1.legend(fontsize=7, frameon=True, edgecolor='black')
     ax1.set_xlim(0, 240)
-    ax1.grid(alpha=0.3)
+    ax1.grid(True, alpha=0.25, linewidth=0.5)
 
     # (b) eta_track grouped bars with hatches
     x = np.arange(len(waves))
@@ -389,17 +391,16 @@ def make_figure(results, step_down_trace, step_down_mpp):
     for ci, c in enumerate(ctrls):
         vals = [results[w][c]['eta_track'] for w in waves]
         ax2.bar(x + (ci - 1.5) * width, vals, width,
-                color=CB_COLORS[ci], hatch=HATCHES[ci],
-                edgecolor='black', linewidth=0.4, label=c)
+                color=CB_COLORS[ci], edgecolor='black', linewidth=0.6, label=c)
     ax2.set_xticks(x)
-    ax2.set_xticklabels(waves, rotation=20, ha='right')
-    ax2.set_ylabel('$\\eta_{track}$ (%)')
-    ax2.set_title('(b) Tracking efficiency per waveform')
-    ax2.legend(fontsize=10, framealpha=0.9, ncol=2)
+    ax2.set_xticklabels(waves, rotation=0, ha='center', fontsize=7)
+    ax2.set_ylabel('$\\eta_{track}$ (%)', fontsize=8, weight='bold')
+    ax2.set_title('(b) Tracking efficiency per waveform', fontsize=9, weight='bold')
+    ax2.legend(fontsize=7, frameon=True, edgecolor='black', ncol=2)
     ax2.set_ylim(80, 100.5)
-    ax2.grid(axis='y', alpha=0.3)
+    ax2.grid(True, axis='y', alpha=0.25, linewidth=0.5)
 
-    fig.tight_layout()
+    fig.tight_layout(pad=0.5)
     os.makedirs(os.path.dirname(FIG_PATH), exist_ok=True)
     fig.savefig(FIG_PATH, dpi=300)
     plt.close(fig)

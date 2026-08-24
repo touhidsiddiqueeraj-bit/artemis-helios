@@ -1,52 +1,58 @@
 """
 Timing diagram for Section V — irradiance to PV response
-Shows: Irradiance sensor (INA219 8.5ms) → Helios preprocess 7.58us → LSTM 6.359ms → packet 80.94us → UART 3.485ms → Artemis parse 79.7us → VS-P&O+blend 41.6us → PWM 19.9us → Converter 50kHz (20us period)
-Full color, horizontal timeline.
+Two-row, full color, readable at 100% zoom, grouped tiny segments, larger fonts
 """
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
+import matplotlib.gridspec as gridspec
 
-fig, ax = plt.subplots(figsize=(7.0, 1.6))
-ax.set_xlim(0, 105)
+fig = plt.figure(figsize=(7.2, 2.4))
+gs = gridspec.GridSpec(2, 1, height_ratios=[1, 1], hspace=0.40, left=0.08, right=0.97, top=0.88, bottom=0.12)
+
+# Helios row — group tiny Preproc+Packet as visible 1.0ms block
+ax = fig.add_subplot(gs[0])
+ax.set_xlim(0, 100)
 ax.set_ylim(0, 1)
 ax.axis('off')
-
-# Timeline from 0 to 100ms
-# Segments: INA219 8.517, Helios 10.002, UART is part of Helios, Artemis 9.238, but end-to-end is 3.58ms from Helios TX start?
-# For diagram, show sequential: INA219 (8.517) + Helios (10.002) is not sequential — INA219 is on Artemis, Helios is parallel
-# Better show: Sensor → Helios (INA219 is actually on Artemis, but for diagram show as sensor acquisition)
-# Sequence per Section V text: irradiance → INA219 8.517ms → Helios preprocess 7.58us → LSTM 6.359ms → packet 80.94us → UART 3.485ms → Artemis parse 79.7us → VS-P&O 41.6us → PWM 19.9us → Converter
-segments = [
+segments_h = [
     ("INA219\n8.52 ms", 8.517, "#E76F51"),
-    ("Preproc\n7.6 µs", 0.00758, "#F4A261"),
     ("LSTM\n6.36 ms", 6.359, "#2A9D8F"),
-    ("Packet\n80.9 µs", 0.08094, "#E9C46A"),
     ("UART\n3.48 ms", 3.4847, "#264653"),
-    ("Parse\n79.7 µs", 0.0797, "#C73E1D"),
-    ("VS-P&O\n41.6 µs", 0.0416, "#F4A261"),
-    ("PWM\n19.9 µs", 0.0199, "#2E86AB"),
+    ("Other\n0.09 ms", 1.0, "#F4A261"), # Preproc 7.58 + Packet 80.94 = 0.088, display as 1.0 for visibility
 ]
-
 x=0
-for label, w, color in segments:
-    ax.add_patch(patches.Rectangle((x, 0.35), w, 0.3, facecolor=color, edgecolor='black', linewidth=0.7))
-    # Label inside if wide enough, else above
-    if w > 1.0:
-        ax.text(x+w/2, 0.50, label, ha='center', va='center', fontsize=5.5, weight='bold', color='white' if color=="#264653" else 'black')
-    else:
-        ax.text(x+w/2, 0.75, label, ha='center', va='bottom', fontsize=5, rotation=0)
-    x += w
+for label, w, color in segments_h:
+    ax.add_patch(patches.Rectangle((x, 0.30), w, 0.40, facecolor=color, edgecolor='black', linewidth=0.8))
+    ax.text(x+w/2, 0.50, label, ha='center', va='center', fontsize=7, weight='bold', color='white' if color=="#264653" else 'black')
+    x+=w
+ax.add_patch(patches.Rectangle((x, 0.30), 100-x, 0.40, facecolor='#EEEEEE', edgecolor='black', linewidth=0.7, hatch='///', alpha=0.4))
+ax.text((100+x)/2, 0.50, "Idle ~86 ms", ha='center', va='center', fontsize=7, style='italic')
+ax.text(100, 0.82, "100 ms", ha='right', va='bottom', fontsize=7, style='italic')
+ax.axvline(100, color='black', ls='--', lw=1.0)
+ax.set_title("Helios (ESP32-S3) + Sensor  —  10.00 ms tick", fontsize=8, weight='bold', loc='left')
 
-# Idle and budget
-ax.add_patch(patches.Rectangle((x, 0.35), 100-x, 0.3, facecolor='#EEEEEE', edgecolor='black', linewidth=0.7, hatch='///', alpha=0.5))
-ax.text((100+x)/2, 0.50, "Idle ~86 ms", ha='center', va='center', fontsize=6, style='italic')
-ax.text(100, 0.80, "100 ms", ha='right', va='bottom', fontsize=6, style='italic')
-ax.axvline(100, color='black', ls='--', lw=0.8)
-
-ax.text(0.5, 0.85, "Irradiance → Sensor → Helios → UART → Artemis → PWM → Converter (50 kHz)", ha='left', va='center', fontsize=7, weight='bold')
-ax.set_title("Signal-path timing diagram (single 100 ms control cycle, not to scale for µs segments)", fontsize=7, pad=8)
+# Artemis row
+ax2 = fig.add_subplot(gs[1])
+ax2.set_xlim(0, 100)
+ax2.set_ylim(0, 1)
+ax2.axis('off')
+segments_a = [
+    ("INA219\n8.52 ms", 8.517, "#E76F51"),
+    ("Parse+VS\n0.14 ms", 1.0, "#F4A261"), # Parse 79.7 + VS-P&O 41.6 + PWM 19.9 = 0.141, display as 1.0
+    ("UART TX\n0.60 ms", 0.600, "#2A9D8F"),
+]
+x=0
+for label, w, color in segments_a:
+    ax2.add_patch(patches.Rectangle((x, 0.30), w, 0.40, facecolor=color, edgecolor='black', linewidth=0.8))
+    ax2.text(x+w/2, 0.50, label, ha='center', va='center', fontsize=7, weight='bold', color='black')
+    x+=w
+ax2.add_patch(patches.Rectangle((x, 0.30), 100-x, 0.40, facecolor='#EEEEEE', edgecolor='black', linewidth=0.7, hatch='///', alpha=0.4))
+ax2.text((100+x)/2, 0.50, "Idle ~90 ms", ha='center', va='center', fontsize=7, style='italic')
+ax2.text(100, 0.82, "100 ms", ha='right', va='bottom', fontsize=7, style='italic')
+ax2.axvline(100, color='black', ls='--', lw=1.0)
+ax2.set_title("Artemis (STM32F103) + Converter  —  9.24 ms tick, Buck 50 kHz (20 µs)", fontsize=8, weight='bold', loc='left')
 
 plt.tight_layout()
 plt.savefig("Figures/timing_diagram.png", dpi=600, bbox_inches='tight', pad_inches=0.04)
