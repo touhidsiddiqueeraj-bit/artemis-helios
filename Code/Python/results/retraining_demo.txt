@@ -1,0 +1,6 @@
+On-device retraining demo — 32-unit LSTM (4385 params) last-layer fine-tune
+Base (Year1) MAE on Year2 eval daytime>10: 54.68 W/m2 (final_model_metrics.csv)
+After 30d (720h) ring-buffer fine-tune (5 epochs, Adam 1e-4, last Dense only): 52.10 W/m2
+Improvement: 2.58 W/m2 (4.7%)
+Method: ESP32-S3 8MB PSRAM, TFLite Micro, 720-sample ring buffer, last-layer only (2 params + 32 biases) — feasible <20KB
+Evidence: retraining_demo.csv, Year2 test hourly, Code/Python/retraining_demo.py

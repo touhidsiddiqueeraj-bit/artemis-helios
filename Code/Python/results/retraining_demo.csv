@@ -1,0 +1,4 @@
+phase,mae_wm2,note
+before,54.68,"Base 32-unit LSTM, Year1 trained, Year2 eval (daytime>10)"
+after,52.10,"After 30d (720h) ring-buffer fine-tune, 5 epochs, Adam 1e-4, last-layer only"
+delta,2.58,4.7% improvement
