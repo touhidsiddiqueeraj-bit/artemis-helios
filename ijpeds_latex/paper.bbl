@@ -75,10 +75,10 @@ N.~E. Michael, S.~Hasan, A.~Al-Durra, and M.~Mishra, ``Short-term solar
   short-term memory neural network,'' \emph{Applied Energy}, vol. 324, p.
   119727, 2022.
 
-\bibitem{aziz2021}
-T.~Aziz and S.~Chowdhury, ``Performance evaluation of off-grid solar
-  photovoltaic installations in bangladesh,'' \emph{Cleaner Environmental
-  Systems}, vol.~2, p. 100003, 2021.
+\bibitem{mazumdar2024}
+D.~Mazumdar, P.~K. Biswas, and C.~Sain, ``Harnessing deep learning for enhanced
+  mppt in solar pv systems: an lstm approach using real-world data,''
+  \emph{Eng. Proc.}, vol.~5, no.~4, p.~42, 2024.
 
 \bibitem{boubaker2023}
 S.~Boubaker, ``Predictive maximum power point tracking techniques for
@@ -89,31 +89,6 @@ S.~Boubaker, ``Predictive maximum power point tracking techniques for
 Q.~A. Aldulaimi and I.~{\c{C}}evik, ``A comparative analysis of anfis-based
   mppt for photovoltaic systems under various operating conditions,''
   \emph{Electronics}, vol.~14, no.~13, p. 2649, 2025.
-
-\bibitem{mazumdar2024}
-D.~Mazumdar, P.~K. Biswas, and C.~Sain, ``Harnessing deep learning for enhanced
-  mppt in solar pv systems: an lstm approach using real-world data,''
-  \emph{Eng. Proc.}, vol.~5, no.~4, p.~42, 2024.
-
-\bibitem{agga2022}
-A.~Agga, A.~Abbou, M.~Labbadi, Y.~E. Houm, and I.~H.~O. Ali, ``Cnn-lstm: an
-  efficient hybrid deep learning architecture for predicting short-term
-  photovoltaic power production,'' \emph{Electric Power Systems Research}, vol.
-  208, p. 107908, 2022.
-
-\bibitem{sarkar2016}
-N.~I. Sarkar, ``A review of maximum power point tracking techniques for solar
-  energy conversion systems,'' \emph{Renewables}, vol.~3, no.~1, p.~8, 2016.
-
-\bibitem{kumari2021}
-P.~Kumari and D.~Toshniwal, ``Deep learning models for solar irradiance
-  forecasting: a comprehensive review,'' \emph{Journal of Cleaner Production},
-  vol. 318, p. 128566, 2021.
-
-\bibitem{hiyama1997}
-T.~Hiyama and K.~Kitabayashi, ``Neural network based estimation of maximum
-  power generation from pv module,'' \emph{IEEE Trans. Energy Convers.},
-  vol.~12, no.~3, pp. 241--247, 1997.
 
 \bibitem{kofinas2017}
 P.~Kofinas, S.~Doltsinis, A.~I. Dounis, and G.~A. Vouros, ``A reinforcement
@@ -132,52 +107,6 @@ P.~Kofinas, S.~Doltsinis, A.~I. Dounis, and G.~A. Vouros, ``A reinforcement
 M.~A. Hossion, ``Analysis of 1-year energy data of a 5 kw and a 122 kw rooftop
   photovoltaic installation in dhaka,'' \emph{Energy Harvesting and Systems},
   vol.~11, no.~1, p. 20230089, 2024.
-
-\bibitem{cabraal2021}
-A.~Cabraal, W.~A. Ward, V.~S. Bogach, and A.~Jain, \emph{Living in the Light:
-  The Bangladesh Solar Home Systems Story}.\hskip 1em plus 0.5em minus
-  0.4em\relax Washington, DC: World Bank Group, 2021.
-
-\bibitem{sarker2020}
-S.~A. Sarker, S.~Wang, K.~M.~M. Adnan \emph{et~al.}, ``Economic viability and
-  socio-environmental impacts of solar home systems for off-grid rural
-  electrification in bangladesh,'' \emph{Energies}, vol.~13, no.~3, p. 679,
-  2020.
-
-\bibitem{chakrabarty2011}
-S.~Chakrabarty and T.~Islam, ``Financial viability and eco-efficiency of the
-  solar home systems (shs) in bangladesh,'' \emph{Energy}, vol.~36, no.~8, pp.
-  4821--4827, 2011.
-
-\bibitem{chowdhury2011}
-S.~A. Chowdhury, M.~Mourshed, S.~M.~R. Kabir \emph{et~al.}, ``Technical
-  appraisal of solar home systems in bangladesh: a field investigation,''
-  \emph{Renewable Energy}, vol.~36, no.~2, pp. 772--778, 2011.
-
-\bibitem{khan2020}
-I.~Khan, ``Impacts of energy decentralization viewed through the lens of the
-  energy cultures framework: solar home systems in the developing economies,''
-  \emph{Renewable and Sustainable Energy Reviews}, vol. 119, p. 109576, 2020.
-
-\bibitem{saim2025}
-M.~A. Saim, M.~T. Ahammed, and I.~Khan, ``Technical barriers and user
-  challenges toward sustainable energy solutions in remote rural areas of
-  bangladesh,'' \emph{Energy Reports}, vol.~13, pp. 3745--3759, 2025.
-
-\bibitem{amin2021}
-S.~B. Amin, M.~I. Chowdhury, S.~M.~A. Ehsan, and S.~M.~Z. Iqbal, ``Solar energy
-  and natural disasters: exploring household coping mechanisms, capacity, and
-  resilience in bangladesh,'' \emph{Energy Research and Social Science},
-  vol.~79, p. 102190, 2021.
-
-\bibitem{diallo2020}
-A.~Diallo and R.~Moussa, ``The effects of solar home system on welfare in
-  off-grid areas: evidence from c{\^o}te d'ivoire,'' \emph{Energy}, vol. 194,
-  p. 116835, 2020.
-
-\bibitem{masters2013}
-G.~M. Masters, \emph{Renewable and Efficient Electric Power Systems},
-  2nd~ed.\hskip 1em plus 0.5em minus 0.4em\relax Hoboken, NJ, USA: Wiley, 2013.
 
 \bibitem{lave2010}
 B.~Lave and J.~Kleissl, ``Solar variability of four sites across the state of

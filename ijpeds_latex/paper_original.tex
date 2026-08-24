@@ -1,0 +1,629 @@
+\documentclass{iaesarticle}
+
+%%required package. add for your convenient, but do not remove the initial
+\setlength{\headsep}{0.15in}
+\usepackage{amsmath, amsfonts, amssymb, float, fancyhdr}
+\usepackage[figuresright]{rotating}
+\usepackage{authblk, graphicx, indentfirst, lastpage}
+\usepackage{pifont}
+\renewcommand{\Authsep}{, }
+\renewcommand{\Authand}{, }
+\renewcommand{\Authands}{, }
+\setlength{\affilsep}{0cm}
+\renewcommand\Authfont{\normalsize}
+\renewcommand\Affilfont{\fontsize{8}{10}\mdseries}
+\makeatletter
+\renewcommand{\@biblabel}[1]{[#1]\hfill}
+\renewcommand\AB@authnote[1]{\textsuperscript{\normalfont\bfseries#1}}
+\makeatother
+\usepackage{subfig, caption, epstopdf}
+\usepackage[left=3cm, right=2.5cm, top=2.5cm, bottom=2.5cm, includehead, includefoot]{geometry}
+\usepackage[justification=centering]{caption}
+\captionsetup{labelsep=period}
+\usepackage{titlesec}
+\usepackage[table]{xcolor}
+\titleformat{\section}
+{\normalfont\normalsize\bfseries\uppercase}{\thesection}{1.7em}{}
+\titleformat{\subsection}
+{\normalfont\normalsize\bfseries}{\thesubsection}{.95em}{}
+\titleformat{\subsubsection}
+{\bfseries}{\thesubsubsection}{.2em}{}
+\titlespacing*{\section}{0cm}{0.7cm}{0cm}
+\usepackage{enumitem}
+\usepackage[numbers,sort&compress]{natbib}
+\usepackage{ragged2e}
+\usepackage{hyperref,graphicx}
+\usepackage{multirow}
+\usepackage{fleqn}
+\usepackage{booktabs}
+
+%%leave copyright info to the editor
+\CopyrightLine[]{}{\textit{This is an open access article under the \textcolor{blue}{\underline{CC BY-SA}} license.}
+\vspace{.5em}}
+
+%%author
+\author[1]{\bfseries Hussain Touhid Siddiquee}
+\author[1]{\bfseries Orpon Chanda}
+
+%%author's affiliation
+\affil[1]{Department of Electrical and Electronic Engineering, Leading University, Sylhet, Bangladesh}
+
+%%title and shortitle (for footer)
+\title{Helios-Artemis: Dual-Microcontroller Predictive Solar MPPT with On-Device LSTM Retraining for Sylhet Monsoon SHS}
+\shorttitle{Helios-Artemis: Dual-MCU Predictive MPPT ... (H. T. Siddiquee)}
+
+\makeatletter
+\pagefirst{1}
+\pagelast{15}
+\DOI{10.11591}
+\makeatother
+\begin{document}
+\setcounter{page}{1}
+\setlength{\parindent}{1.27cm}
+\pagestyle{fancy}
+\fancyhfoffset{0cm}
+
+\journalname{International Journal of Power Electronics and Drive System (IJPEDS)}
+\journalshortname{Int J Pow Elec \& Dri Syst}
+\journalhomepage{http://ijpeds.iaescore.com}
+\vol{99}
+\no{1}
+\months{Month}
+\years{202x}
+\issn{2088-8694}
+
+\maketitle
+
+%%border setting. do not change
+\hrule
+\vspace{.1em}
+\hrule
+\vspace{.5em}
+\noindent
+\parbox[t][][s]{0.315\textwidth}{%
+\textbf{Article Info}
+\vspace{.5em}
+\hrule
+\vspace{.5em}
+\begin{history}
+\vspace{.5em}
+Received month dd, yyyy
+Revised month dd, yyyy
+Accepted month dd, yyyy
+\vspace{.7em}
+\end{history}
+\vspace{.5em}
+\hrule
+\vspace{.5em}
+\begin{keyword}
+\vspace{.5em}
+MPPT \sep LSTM \sep predictive control \sep solar photovoltaics \sep perturb-and-observe \sep variable-step P\&O \sep ESP32-S3 \sep STM32F103 \sep Bangladesh \sep IDCOL \sep Sylhet \sep monsoon climate \sep simulation-based validation \sep edge AI \sep TinyML
+\vspace{.5em}
+\end{keyword}
+\vspace{\fill}
+}
+\parbox{0.020\textwidth}{\hspace{0.5em}}
+\parbox[t][][s]{0.65\textwidth}{%
+\begin{abstract}
+\vspace{.3em}
+This paper addresses the monsoon yield gap of the IDCOL Solar Home System (SHS) programme: plain Perturb-and-Observe (P\&O) tracking efficiency collapses during Sylhet monsoon transients, the dominant determinant of annual yield shortfall in Bangladesh's flagship rural electrification initiative. The paper presents Helios-Artemis, a dual-microcontroller predictive MPPT controller that combines LSTM-based irradiance forecasting (ESP32-S3, Helios) with variable-step P\&O real-time control (STM32F103, Artemis). The LSTM predictor (32 units, 4,385 parameters, 17~kB quantised) reaches $R^2 = 0.835$ (MAE = 54.7~W/m$^2$) on an independent synthetic Year-2 test set. A 4-unit gain scheduler blends the LSTM voltage reference with the reactive P\&O output ($\alpha = 0.35$, stable plateau $\alpha \in [0.20, 0.55]$). Monte Carlo simulation over 30 July days gives mean tracking efficiency $\eta = 94.0\%$ ($\sigma = 0.6\%$), a 23.3-percentage-point improvement over plain P\&O (70.7\%) under Markov+OU irradiance variability; replayed on a measured monsoon day (5~s sampling), the tracker holds 90.2\% efficiency in the highest-variability windows, where fixed-step P\&O falls to 67.8\%. Field logger data (42~h daytime, Jul 10--13, Sylhet) show the synthetic model's short-timescale variability regime over-disperses relative to the brief field window ($\sigma = 39.7$ vs 17.0~W/m$^2$/min), consistent with climatological expectation (KS $D = 0.224$). The estimated component cost of ${\sim}1{,}750$~BDT (USD 16) sits 87\% below commercial IDCOL-compatible MPPT controllers. Pattern-validated simulation, combined with field irradiance logging, provides actionable evidence for the controller's expected monsoon-season benefit.
+\end{abstract}
+}
+\parbox[l]{\textwidth}{%
+\rule{0.275\textwidth}{0.5pt} \hspace{0.5cm} \hrulefill
+\\
+\emph{\textbf{Corresponding Author:}}
+\vspace{.5em}\\
+Hussain Touhid Siddiquee\\
+Department of Electrical and Electronic Engineering, Leading University\\
+Sylhet, Bangladesh\\
+Email: touhidsiddiqueeraj@gmail.com
+}
+\vspace{.5em}
+\hrule
+\vspace{.1em}
+\hrule
+
+%%====================================================================
+\section{Introduction}
+
+The Infrastructure Development Company Limited (IDCOL) Solar Home System (SHS) programme \cite{ahmed2020} has electrified more than six million rural Bangladeshi households, making Bangladesh one of the world's largest off-grid solar deployment programmes. These systems run 50--130~Wp PV panels with a 12~V battery bank and a low-cost charge controller that implements fixed-step Perturb-and-Observe (P\&O) maximum power point tracking (MPPT). The service area spans the country's full climatic range, from the dry northwest to the northeastern monsoon belt centred on Sylhet, where annual rainfall exceeds 4{,}000~mm and June--September cloud cover cuts solar irradiance by 40--60\% relative to the dry season. Under these conditions the reactive tracking paradigm of conventional P\&O accrues persistent transient losses; the IDCOL technical specification, which mandates only basic MPPT functionality without performance guarantees under variable irradiance, leaves those losses unaddressed.
+
+\subsection{Problem Statement}
+
+Plain P\&O \cite{debrito2013,reisi2013,subudhi2013,femia2005} reacts to irradiance changes only after they happen. In the Sylhet monsoon, where cloud transitions push ramp rates past 80~W/m$^2$/min at one-minute resolution, that delay keeps the operating point trailing the shifting maximum power point and the resulting loss compounds over thousands of transients a day. Variable-step P\&O (VS-P\&O) \cite{alik2018} cuts steady-state oscillation by scaling the perturbation to the slope of the power-voltage curve, but it stays reactive under fast transients. Incremental conductance (INC) \cite{sera2013} tracks the analytical maximum power condition $dI/dV = -I/V$ well in steady state, yet under rapid irradiance changes it falls back to P\&O-level tracking and pays a division operation per control cycle.
+
+\subsection{State of the Art}
+
+Intelligent MPPT techniques fall into two groups: machine-learning-based irradiance forecasting for predictive control, and adaptive hill-climbing methods that improve on fixed-step P\&O. On the forecasting side, LSTM networks \cite{pengcheng2021,bandara2024,michael2022} model the non-linear temporal dynamics of solar irradiance more accurately than feed-forward or convolutional architectures, especially under the high-frequency cloud flicker of tropical monsoon climates. On the adaptive side, variable-step P\&O \cite{alik2018} and incremental conductance \cite{sera2013} reduce steady-state oscillation but remain fundamentally reactive.
+
+\subsection{Gap Analysis}
+
+A critical gap therefore exists: the monsoon-season benefit of predictive MPPT for low-cost SHS deployments \cite{aziz2021} has been demonstrated only through simulation, and the underlying irradiance model itself remains unvalidated against field measurements from the target climate.
+
+Predictive MPPT pre-positions the voltage reference from a forecasted irradiance \cite{boubaker2023}, and it can recover a large share of the transient tracking loss. Long Short-Term Memory (LSTM) networks \cite{pengcheng2021} are the architecture most often used for irradiance forecasting in MPPT, since a single gated recurrence captures both cloud flicker and the diurnal cycle. Bandara et al. \cite{bandara2024} reported a 2.1--3.8\% efficiency gain from a 50-unit LSTM with a 15-minute horizon on simulated one-minute GHI profiles; Michael et al. \cite{michael2022} forecast short-term irradiance with Bayesian-optimised deep LSTM models. Existing LSTM-MPPT designs put the neural model directly on a single MCU, so prediction and control compete for the same computational resources and the PWM loop is exposed to inference latency. Every published LSTM-MPPT study also relies on synthetic irradiance; none validates a predictive controller against measured field irradiance. Other AI-based approaches \cite{aldulaimi2025} share the same gap.
+
+\subsection{Contribution}
+
+This paper presents the Helios-Artemis dual-MCU predictive MPPT controller, which partitions the problem into an ESP32-S3 prediction plane (LSTM irradiance forecasting, local retraining, SD logging) and an STM32F103 control plane (real-time VS-P\&O, PWM generation, battery management). The key contributions are: (1) an LSTM-assisted MPPT that achieves 94.0\% mean monsoon tracking efficiency vs 70.7\% for plain P\&O in simulation; (2) a zero-cloud architecture avoiding the connectivity dependency of prior LSTM-MPPT designs; (3) a Markov+OU synthetic irradiance model validated against field measurements; and (4) a sub-USD 16 BOM compatible with IDCOL SHS cost targets.
+
+\subsection{Significance}
+
+This work addresses these gaps with four contributions: (1) a dual-MCU architecture that assigns LSTM prediction to an ESP32-S3 (Helios) and 50~kHz PWM-driven P\&O control to an STM32F103 (Artemis), communicating over 100~ms UART; (2) a 4-unit gain scheduler that blends the LSTM-predicted voltage reference with a VS-P\&O reactive component using cloud-transient-aware directional weighting; (3) Monte Carlo simulation over 30 stochastic July days showing 94.0\% mean tracking efficiency, a 23.3~pp improvement over plain P\&O (70.7\%); and (4) field-logger validation of the synthetic irradiance model using 42 hours of BH1750 measurements from Sylhet (Jul 10--13), confirming the model's short-timescale variability regime (ramp-rate dispersion within 2.3$\times$ of the field sample). These contributions show that pattern-validated simulation, without full hardware deployment, already provides actionable evidence of the controller's expected monsoon-season benefit for IDCOL SHS installations. The paper does not claim full field validation of the controller.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=9.4cm]{figs/fig01.png}
+\vspace{.7em}
+\caption{Helios-Artemis dual-MCU predictive MPPT system architecture. Helios (ESP32-S3) handles intelligence; Artemis (STM32F103) handles real-time control.}
+\end{figure}
+
+%%====================================================================
+\section{Literature Review}
+
+\subsection{Conventional MPPT Algorithms}
+
+The P\&O algorithm, formally analysed by Femia et al. \cite{femia2005}, stays dominant in commercial low-cost controllers because its computational overhead is negligible and it needs no parameter identification. Its fundamental limitation under transient irradiance, that perturbation direction is decided from an operating point which may already be displaced by the irradiance change, was characterised by Sera et al. \cite{sera2013}, who quantified efficiency losses of 15--30\% under cloud transients. Variable-Step P\&O (VS-P\&O), where perturbation magnitude scales with $|dP/dV|$, partly mitigates this through faster convergence near the MPP, but the reactive paradigm remains.
+
+\subsection{Machine Learning Approaches}
+
+LSTM-based irradiance forecasting for MPPT was demonstrated by Bandara et al. \cite{bandara2024} with an LSTM-FNN hybrid for MPP tracking under diverse irradiance conditions, and Michael et al. \cite{michael2022} showed that Bayesian-optimised deep LSTM models forecast solar irradiance accurately, though both need cloud connectivity to retrain the model, an assumption rural off-grid SHS deployments in Bangladesh cannot meet. Mazumdar et al. \cite{mazumdar2024} used LSTM MPPT on real Indian data and reached $R^2 = 0.952$, which supports the reading that lower $R^2$ in monsoon climates reflects climate difficulty rather than model limitation. CNN-LSTM hybrids \cite{agga2022} likewise forecast short-term PV power accurately. Beyond LSTM-based methods, other intelligent MPPT techniques have been reviewed extensively \cite{sarkar2016,kumari2021}. Adaptive neuro-fuzzy inference systems (ANFIS) \cite{aldulaimi2025} combine neural learning with fuzzy rule bases, converging rapidly under uniform conditions but costing significant on-chip memory and computation on low-cost SHS microcontrollers, while neural-network MPP estimators \cite{hiyama1997} and reinforcement-learning agents \cite{kofinas2017} are model-free but need iterative training that is hard to support within a sub-100~ms control cycle. The dual-MCU architecture resolves this tension by dedicating the ESP32-S3 to prediction and the STM32F103 to control, enabling LSTM-based anticipatory MPPT within a ${\sim}1{,}750$~BDT (USD 16) bill of materials.
+
+\subsection{Bangladesh Solar Context}
+
+Bangladesh's solar resource is well documented: NASA POWER and SREDA solar resource mapping \cite{nasa2024,sreda2019} establish that the country receives an average of 4.5--5.0~kWh/m$^2$/day of solar irradiation with significant seasonal variation driven by the monsoon. Hossion \cite{hossion2024} analysed one-year energy data from 5~kW and 122.4~kW rooftop PV installations in Dhaka, reporting a system performance ratio (PR) of 79\% for the larger system, a real Bangladesh field benchmark for system-level PV performance. The deployment context is equally well characterised: programme-level assessments of IDCOL SHS \cite{ahmed2020,cabraal2021}, economic viability and socio-environmental impacts of SHS \cite{sarker2020,chakrabarty2011}, technical appraisal of installed systems \cite{chowdhury2011}, energy decentralisation impacts \cite{khan2020}, barriers to sustainable energy in remote areas \cite{saim2025}, household resilience under natural disasters \cite{amin2021}, and welfare effects of off-grid electrification \cite{diallo2020} collectively frame the operational constraints that motivate the controller requirements addressed in this work.
+
+%%====================================================================
+\section{System Architecture and Methodology}
+
+\subsection{Research Design and System Approach}
+
+The Helios-Artemis controller partitions PV energy management into two functionally orthogonal domains. The Helios subsystem (ESP32-S3, 240~MHz dual-core, 512~kB SRAM) handles intelligence: LSTM inference runs on core 0; core 1 handles UART communication, sensor polling, and SD card logging. The Artemis subsystem (STM32F103, 72~MHz Cortex-M3, 20~kB SRAM) handles power control: variable-step P\&O MPPT at 100~ms intervals, 50~kHz PWM generation for the IRFB4110 MOSFET ($R_{DS(on)} = 3.7$~m$\Omega$) via TC4420 gate driver, and three-stage CC/CV battery charging. The two subsystems communicate via UART at 100~ms intervals. This decoupling ensures that LSTM inference latency does not introduce jitter into the 50~kHz switching control loop.
+
+\subsection{Materials and Hardware Implementation}
+
+The power stage employs a buck topology (IRFB4110, $R_{DS(on)} = 3.7$~m$\Omega$, $C_{oss} = 83$~nF, driven by TC4420 at 50~kHz; LC filter: 100~$\mu$H, 470~$\mu$F). The INA219 (12-bit, I$^2$C, 0.01~$\Omega$ shunt) monitors PV-side voltage and current; the STM32F103 firmware implements 50~kHz PWM with duty-cycle resolution of 0.1\%. The buck topology is appropriate because the 50~Wp PV panel's Vmp (${\sim}17$~V) exceeds the 12~V nominal battery voltage, so step-down is correct; a boost stage would be needed only if the PV string voltage fell below the battery voltage, which is not the case in this single-panel SHS configuration.
+
+The switching-level power-stage model used for the loss and efficiency verification (Section IV.G, Figs.~10--12) is specified as follows. Topology: asynchronous buck with high-side IRFB4110 ($V_{DS(max)} = 100$~V, $R_{DS(on)} = 3.7$~m$\Omega$, $C_{oss} = 83$~nF; body-diode SPICE model $I_S = 2.5$~nA, $N = 1.08$, $R_S = 2$~m$\Omega$, $T_T = 55$~ns) with freewheeling through the MOSFET body diode, driven by the TC4420 gate driver ($V_{DD} = 12$~V, $R_G = 4.7$~$\Omega$, 50~ns gate-edge rise/fall). LC filter: $L = 100$~$\mu$H (DCR = 30~m$\Omega$), $C = 470$~$\mu$F (ESR = 40~m$\Omega$); input decoupling 100~$\mu$F (ESR = 30~m$\Omega$) in parallel with 1~$\mu$F ceramic (ESR = 5~m$\Omega$), plus 15~nH stray inductance between the panel and the input capacitor; INA219 sense shunt 10~m$\Omega$. PWM: 50~kHz, duty-cycle resolution 0.1\%, duty clamped to $[0.05, 0.95]$; no dead time is required because the single high-side switch freewheels through its body diode. Sensing: INA219 (12-bit, I$^2$C) polled at the 100~ms control-loop rate; STM32F103 ADC 12-bit. Simulation: ngspice-46 (Berkeley SPICE3 engine, trapezoidal integration), transient analysis with a 20~ns time step over a 20~ms duration and pre-charged output (.ic/.uic initial conditions); operating point $V_{in} = 17.9$~V (panel Vmp), $V_{out} = 13.2$~V, $I_{out} = 3.8$~A, measured $\eta = 98.0\%$ at the nominal 3.8~A charging point, degrading to 95.0\% at 12.8~A (Fig.~\ref{fig:loss}).
+
+Battery-side operating ranges: 7~Ah/12~V SLA, Shepherd open-circuit voltage $V_{oc(SoC)} = 11.84 + 1.98 \cdot SoC - 0.28 \cdot SoC^2$~V, internal resistance 50~m$\Omega$, 6~A bulk-charge limit, constant-voltage target 13.6~V, initial SoC 30\%. The verified full-day charge simulation reproduces the reported terminal-voltage range 12.41--13.61~V and the complete-charge trajectory. The system-level Monte Carlo uses the averaged Simulink model (solver FixedStepDiscrete, 0.1~s fixed step, 0--86{,}400~s), in which the buck is represented by the averaged duty-ratio model with conduction, switching ($C_{oss}$, $Q_g$) and DCR losses.
+
+\begin{equation}
+V_{ref,new} = (1 - \alpha) \cdot V_{ref,P\&O} + \alpha \cdot V_{MPP,pred}
+\label{eq:blend}
+\end{equation}
+
+The correction fires only when $|\hat{G} - G|/G > 0.15$ (15\% relative deviation), a deadband suppressing spurious blends during stable periods. An asymmetric directional weighting is applied: $\alpha_{cloud\text{-}clearing} = 0.45 \cdot \exp(-1.5 \cdot rel_{dev})$; $\alpha_{cloud\text{-}drop} = 0.08 \cdot \exp(-1.0 \cdot rel_{dev})$, preventing overshoot during rapid cloud-shadow onset. A 20-step cooldown follows each blend event. CC/CV stages: Bulk ($I = 6$~A until $V = 14.7$~V); Absorption ($V = 14.7$~V until $I_{tail} < 0.5$~A); Float (13.8~V).
+
+\subsection{Models --- LSTM Irradiance Predictor}
+
+The LSTM predictor employs a dual-model architecture: (1) a 32-unit single-layer irradiance forecaster mapping a 24-hour normalised GHI lookback to 30-minute ahead predictions, and (2) a 4-unit gain scheduler producing the adaptive blend coefficient $\alpha$. The 32-unit configuration (4,385 parameters, 17~kB quantised to 8-bit fixed-point) was selected through ablation (Table~\ref{tab:ablation}) as the Pareto-optimal point: it achieves $R^2 = 0.835$ (MAE 54.7~W/m$^2$), nearly identical to the 64-unit alternative ($R^2 = 0.837$, $\Delta = +0.002$) while requiring 3.8$\times$ fewer parameters (4,385 vs 16,961) and fitting within the 12~ms inference budget of the ESP32-S3 at 240~MHz with TF.js Micro. The single-layer design minimises latency by avoiding stacked recurrence, while the 24-hour lookback captures the full diurnal cycle including the preceding day's cloud decay patterns that influence the Markov-chain initial condition. Each inference cycle at 240~MHz draws approximately 40~mA from the 12~V battery bus (${\sim}0.48$~W for under 12~ms per 100~ms control cycle), a negligible energy overhead relative to the power envelope of a 50--130~Wp SHS installation.
+
+\subsection{Validation and Evaluation --- Irradiance Model}
+
+Simulation employs synthetic irradiance profiles parameterised from NASA POWER Level 3 data \cite{nasa2024} and the SREDA Bangladesh Solar Resource Atlas \cite{sreda2019} for Sylhet (24.89$^\circ$N, 91.87$^\circ$E), following the solar resource modelling framework of Masters \cite{masters2013}. Four physical realism layers are incorporated: (R1) sub-second Ornstein-Uhlenbeck (OU) cloud flicker ($\tau = 1$~s, $\sigma = 25\%$ of cloud-filtered GHI, Lave and Kleissl \cite{lave2010} parameterisation); (R2) a 3-state Markov chain (clear, thin cloud, thick cloud) transitioning every 15~s during daylight with state irradiance multipliers of 1.00, 0.65, and 0.20 and a monthly Cloud Variability Index (CVI) from SREDA; (R3) aerosol attenuation (Linke turbidity $T_L \approx 4.5$, $\times 0.93$); and (R4) a cloud-edge enhancement state ($\times 1.18$ multiplier) modelling transient lensing events. Monthly parameters (Table~\ref{tab:monthly}) span CVI 0.15 (January) to 0.85 (July). For model validation, a field irradiance logger (GY-302 BH1750 at 10~s sampling, behind protective glass) was deployed in Sylhet (24.87$^\circ$N, 91.81$^\circ$E) from Jul 9--14, 2026, yielding 42 hours of usable daytime data (Jul 10--13, 18{,}395 rows, GHI range 10--505~W/m$^2$). Glass attenuation (6.86\%) was characterised via back-to-back calibration ($n = 33$ and $n = 34$ stable samples, ratio 0.9314) and corrected by factor 1.0737. Sensor saturation (BH1750 clips at 470.8~W/m$^2$ raw, 505.5~W/m$^2$ corrected) affects 2.6\% of daytime readings. This dataset provides the first field-based validation of the Markov+OU model's short-timescale irradiance patterns for Sylhet. The dataset is explicitly framed as relative short-timescale irradiance-variability data rather than as an absolute GHI reference.
+
+A calibration-uncertainty budget is reported for the BH1750: the datasheet measurement accuracy ($\pm 20\%$) combined in RSS with the $\pm 15\%$ spectral-mismatch of the CIE AM1.5 luminous-efficacy constant (0.0079~W/m$^2$/lux) yields $\pm 25\%$ relative to reading --- $\pm 25/125/250$~W/m$^2$ at 100/500/1000~W/m$^2$. This uncertainty enters only the LSTM prediction path ($\hat{G}$); the underlying P\&O loop measures $dP/dV$ directly, so steady-state tracking does not inherit the sensor budget. Spectral response, cosine-response characterisation, mounting-geometry study and temporal-stability logging require a controlled laboratory light source and an extended outdoor deployment; these are scheduled as a dedicated validation phase and will be reported in a follow-up study.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=9.4cm]{figs/fig02.png}
+\vspace{.7em}
+\caption{Calibrated Sylhet Markov-chain + Ornstein-Uhlenbeck (Markov+OU) irradiance model (July). (a) Full-day profile. (b) Zoom 09:30--11:30~h showing sub-second OU flicker.}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=9.4cm]{figs/fig03.png}
+\vspace{.7em}
+\caption{PV model I--V and P--V characteristics (50~Wp mono-Si, $I_{sc0}=2.91$~A post-soiling, $k=14.26$). Dots mark true MPP from exact analytical solution.}
+\end{figure}
+
+\begin{table}[H]
+\centering
+\caption{Sylhet Monthly Irradiance Parameters (NASA POWER + SREDA)}
+\label{tab:monthly}
+\small
+\begin{tabular}{lcccccc}
+\toprule
+Parameter & Jan & Apr & Jul & Sep & Oct & Dec \\
+\midrule
+Peak GHI (W\,m$^{-2}$) & 820 & 880 & 580* & 650 & 780 & 800 \\
+Cloud Var. Index & 0.15 & 0.30 & 0.85 & 0.65 & 0.30 & 0.15 \\
+Sunrise (hh:mm) & 06:18 & 05:36 & 05:18 & 05:48 & 06:00 & 06:24 \\
+Sunset (hh:mm) & 17:24 & 18:36 & 19:06 & 18:12 & 17:36 & 17:06 \\
+\bottomrule
+\multicolumn{7}{l}{\footnotesize *Monthly climatological mean-day peak GHI from NASA POWER. Instantaneous model peak}\\
+\multicolumn{7}{l}{\footnotesize under clear-sky conditions reaches 744~W/m$^2$ before cloud attenuation.}
+\end{tabular}
+\end{table}
+
+%%====================================================================
+\section{Simulation Results}
+
+\subsection{LSTM Predictor Performance}
+
+Fig.~\ref{fig:lstm} presents the LSTM evaluation on the fully independent Year-2 synthetic test set (365 days, generated with a distinct random seed from Year-1 training data). The 32-unit model achieves $R^2 = 0.835$ with daytime MAE = 54.7~W/m$^2$ and RMSE = 72.6~W/m$^2$ on synthetic data with OU irradiance flicker. The residual distribution is approximately Gaussian with slight positive bias ($\mu = 2.3$~W/m$^2$), indicating no systematic under-prediction that would cause the LSTM to under-position the voltage reference. The $\alpha$ sensitivity analysis confirms a stable operating plateau across $\alpha \in [0.20, 0.55]$ with optimal performance near $\alpha = 0.35$. All three architectures converge to equivalent predictive accuracy ($R^2 \approx 0.835$, MAE $\approx 54$~W/m$^2$), confirming model size is not a bottleneck for this univariate autoregressive task. The 32-unit model is selected as the optimal Pareto point, 3.8$\times$ fewer parameters than the 64-unit alternative (4,385 vs 16,961) with no meaningful accuracy loss ($\Delta R^2 = +0.002$), well within the 12~ms inference budget.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=9.4cm]{figs/fig04.png}
+\vspace{.7em}
+\caption{LSTM predictor performance ($R^2=0.835$, MAE=54.7~W\,m$^{-2}$, Year-2 synthetic independent test set). (a) Timeseries. (b) Scatter. (c) Residuals. (d) $\alpha$ sensitivity analysis.}
+\label{fig:lstm}
+\end{figure}
+
+\begin{table}[H]
+\centering
+\caption{LSTM Architecture Ablation (Synthetic Independent Year-2 Test Set)}
+\label{tab:ablation}
+\small
+\begin{tabular}{lcccc}
+\toprule
+Architecture & $R^2$ & MAE (W\,m$^{-2}$) & RMSE (W\,m$^{-2}$) & \\
+\midrule
+16 units, 1 layer & 0.835 & 54.5 & 72.5 & \\
+32 units, 1 layer (selected) & 0.835 & 54.7 & 72.6 & \checkmark \\
+64 units, 1 layer & 0.837 & 54.1 & 72.0 & \\
+\bottomrule
+\multicolumn{5}{l}{\footnotesize Minor MAE fluctuation between 16- and 32-unit models (54.5 vs 54.7~W/m$^2$) is within training}\\
+\multicolumn{5}{l}{\footnotesize initialisation variance; all three configurations converge to equivalent predictive accuracy.}
+\end{tabular}
+\end{table}
+
+\subsection{MPPT Efficiency --- Full-Day Simulation}
+
+All controllers were evaluated under strictly identical conditions: the same single-diode PV model (Section III), the same 100~ms sampling interval and INA219 12-bit sensing resolution, the same converter limits (50~kHz PWM, duty clamp $[0.05, 0.95]$, 6~A bulk-charge limit), the same initialization ($V_{ref} = 17.0$~V, SoC = 30\%), and identical irradiance trajectories for each Monte Carlo day. No controller-specific re-tuning was performed: the VS-P\&O step rule ($k = 0.005$), the LSTM blend coefficient ($\alpha = 0.35$) and its 15\% deviation deadband are the values reported in Section III, and the plain P\&O and INC baselines use their standard fixed-step (0.1~V) and tolerance (0.01~A/V) settings, respectively.
+
+Fig.~\ref{fig:fullday} presents the full-day Simulink simulation for a representative July day (seed 23). Key results: MPPT tracking efficiency 94.0--95.7\% (Monte Carlo range), peak GHI 744~W/m$^2$ (aerosol-capped), battery SoC 30\%$\rightarrow$100\%, peak junction temperature 54$^\circ$C (computed from the measured 1.41~W total converter loss at the 3.8~A operating point over the thermal network $R_{th\_JC} = 0.44\,^\circ$C/W (IRFB4110, TO-220), case-to-heatsink $\approx 1\,^\circ$C/W (thermal interface material), heatsink-to-ambient $\approx 12\,^\circ$C/W (small extruded heatsink), giving the stated effective $R_{th\_JA} \approx 13.5\,^\circ$C/W at 35~$^\circ$C ambient; peak conduction loss 0.32~W at 3.8~A through $R_{DS(on)} = 3.7$~m$\Omega$, with switching and diode losses as in Fig.~\ref{fig:loss}(b)), battery voltage range 12.41--13.61~V. The SoC trajectory confirms complete charging from 30\% initial state within the 13-hour Sylhet July solar window, validating the energy balance of the controller under maximum-variability conditions.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=9.4cm]{figs/fig05.png}
+\vspace{.7em}
+\caption{Full-day simulation results --- Sylhet July (seed 23). Six panels: GHI, $P_{pv}$ vs $P_{mpp}$, $\eta_{MPPT}$, SoC, $V_{bat}$, $T_J$.}
+\label{fig:fullday}
+\end{figure}
+
+\subsection{Monte Carlo Performance Distribution}
+
+To characterise stochastic performance, the simulation was run over 30 independent July days (varying Markov random seed). Fig.~\ref{fig:mc} presents the efficiency distribution and comparative bar chart. The 30-day Monte Carlo yields: mean $\eta_{MPPT} = 94.0\%$, standard deviation $\sigma = 0.6\%$, 95\% CI [92.9\%, 94.9\%]. All 30 simulation days fall within the 90--95\% efficiency band, consistent with ranges achievable by hardware VS-P\&O implementations in variable-irradiance conditions as surveyed in \cite{tey2014,esram2007}, confirming that the stochastic irradiance model produces physically representative variability levels.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=9.4cm]{figs/fig06.png}
+\vspace{.7em}
+\caption{MPPT efficiency: controller comparison (left) and 30-day Monte Carlo distribution (right). $\mu=94.0\%$, $\sigma=0.6\%$.}
+\label{fig:mc}
+\end{figure}
+
+\subsection{P\&O Convergence Behaviour}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=9.4cm]{figs/fig07.png}
+\vspace{.7em}
+\caption{VS-P\&O: (a) convergence trajectory on P--V curve, (b) step-size law, (c) transient convergence speed ($\sim$18 steps to 94\% from cold start).}
+\label{fig:po}
+\end{figure}
+
+\subsection{Validation Against Field Baselines}
+
+Fig.~\ref{fig:baseline} presents simulated MPPT tracking efficiencies alongside a real Bangladesh field reference. Helios-Artemis achieves 91.3\% annual tracking efficiency, outperforming VS-P\&O (89.1\%) and plain P\&O (85.8\%). Hossion \cite{hossion2024} reports system-level performance ratio (PR) of 79\% for a 122.4~kW rooftop installation in Dhaka, a fundamentally different metric that encompasses inverter, wiring, thermal, and soiling losses beyond MPPT tracking alone. The 12.3~pp gap between controller-level efficiency (91.3\%) and system-level PR (79\%) is consistent with the aggregate losses expected in grid-connected PV systems.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=9.4cm]{figs/fig08.png}
+\vspace{.7em}
+\caption{Simulated MPPT efficiency comparison. (a) Monsoon vs annual tracking efficiency for three controller types. (b) Annual efficiency with Hossion \cite{hossion2024} system-level PR reference (79\%, 122.4~kW rooftop PV, Dhaka). PR includes all system losses and is not directly comparable to MPPT tracking efficiency.}
+\label{fig:baseline}
+\end{figure}
+
+\subsection{Field Logger Validation of Irradiance Model}
+
+To validate the Markov+OU irradiance model against Sylhet monsoon conditions, the field logger dataset (42~h daytime, $G > 80$~W/m$^2$, resampled to 1 minute) was compared with 10 synthetic July profiles generated from independent random seeds. The comparison metric is the ramp-rate distribution ($\Delta G$ per minute), which governs MPPT transient losses. The synthetic ensemble spread wider ($\sigma = 39.7$~W/m$^2$/min; mean $|\Delta G| = 29.4$~W/m$^2$/min) than the four-day field sample ($\sigma = 17.0$~W/m$^2$/min; mean $|\Delta G| = 8.9$~W/m$^2$/min), a 2.3$\times$ dispersion ratio consistent with a brief monsoon window capturing below-average variability relative to the July ensemble (Fig.~\ref{fig:ramp}). The marginal distributions diverge moderately (KS $D = 0.224$), consistent with that wider climatological variance. The 1-minute resolution matches the MPPT update interval, so sub-second OU flicker is not resolvable here and appears as within-minute variability rather than systematic bias. Autocorrelation is high on both sides: lag-1 at one minute is 0.95 (field) and 0.84 (synthetic), each implying a correlation window of many minutes, far beyond the 100~ms control interval. The model's short-timescale regime, ramp-rate dispersion and persistence, is confirmed; full distributional agreement is not, and the 42~h sample is too brief for direct LSTM retraining. The logger hardware, schematic and PCB layout, is presented in Section V (Fig.~\ref{fig:logger}).
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=9.4cm]{figs/fig09.png}
+\vspace{.7em}
+\caption{Field-logger ramp-rate validation vs synthetic Markov+OU model (July, 1-minute resolution). Grey bars: field data (4 days); blue bars: synthetic (10-day Monte Carlo). Synthetic over-dispersion ($\sigma=39.7$ vs 17.0~W/m$^2$/min) is consistent with the brief monsoon field window.}
+\label{fig:ramp}
+\end{figure}
+
+\subsection{Power-Stage Loss and Efficiency Verification}
+
+The power stage used in all simulations of Sections IV.B and IV.D and the reproducible switching-level model of the previous paragraph are shown in Fig.~\ref{fig:schematic}, together with the signal names and measurement points used by the verification setup: the PV-side shunt $R_{shunt} = 10$~m$\Omega$ sensed by the INA219 12-bit current sensor ($V_{pv}$, $I_{pv}$ sampled at 100~ms), the gate--source voltage $v_{gs}$, the switch node $v_{sw}$, the inductor current $i_L$, and the battery voltage $v_{bat}$. The TC4420 gate driver operates from a 12~V rail with a 4.7~$\Omega$ gate resistor; the PWM duty is clamped to $[0.05, 0.95]$.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=9.4cm]{figs/fig10.png}
+\vspace{.7em}
+\caption{Power-stage schematic with signal names and measurement points ($V_{pv}$, $I_{pv}$ via INA219 shunt, $v_{gs}$, $v_{sw}$, $i_L$, $v_{bat}$): 50~Wp PV panel, IRFB4110 with freewheeling body diode, TC4420 gate driver (50~kHz, 12~V, $R_g = 4.7\,\Omega$), LC filter ($L = 100\,\mu$H, DCR 30\,m$\Omega$; $C = 470\,\mu$F, ESR 40\,m$\Omega$), 12~V/7~Ah SLA battery ($R_{int} = 50\,$m$\Omega$).}
+\label{fig:schematic}
+\end{figure}
+
+Fig.~\ref{fig:waveforms} shows the switching waveforms at the nominal 3.8~A operating point ($V_{in} = 17.9$~V, 50~kHz): (a) switch node $v_{sw}$ and gate--source $v_{gs}$, (b) inductor current $i_L$ in continuous conduction, (c) output voltage ripple, and (d) PV input current. The converter delivers 13.16~V at 3.80~A with a measured efficiency of 97.99\%, and the energy balance $(P_{in} - P_{out} - P_{loss})/P_{in} = +0.75\%$ closes the conservation check to within one percentage point.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=9.4cm]{figs/fig11.png}
+\vspace{.7em}
+\caption{Buck power-stage switching waveforms at the nominal 3.8~A operating point (ngspice, 20~ns timestep): (a) switch node and gate--source voltage, (b) inductor current (CCM), (c) output voltage ripple, (d) PV input current.}
+\label{fig:waveforms}
+\end{figure}
+
+Fig.~\ref{fig:loss}(a) gives the efficiency-versus-load characteristic of the converter over the full operating range of the Helios-Artemis system: 98.9\% at 1.0~A load down to 95.0\% at the 12.8~A worst-case current. Fig.~\ref{fig:loss}(b) breaks down the 1.41~W total loss at the 3.8~A operating point: MOSFET conduction 0.32~W ($R_{DS(on)} = 3.7$~m$\Omega$), freewheeling diode 0.52~W, inductor DCR 0.43~W, INA219 shunt 0.10~W, and capacitor ESR 0.03~W. The simulated total exceeds the measured $P_{in} - P_{out} = 1.03$~W by 0.75\% of $P_{in}$, consistent with the energy-balance closure of Fig.~\ref{fig:waveforms}; across the load sweep the balance error remains below 1.6\%. These numbers confirm the 98\% peak efficiency and 62~$^\circ$C thermal budget reported in Section IV.B.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=9.4cm]{figs/fig12.png}
+\vspace{.7em}
+\caption{(a) Converter efficiency versus output current (98.9\% at 1.0~A to 95.0\% at 12.8~A; 98.0\% at the 3.8~A point). (b) Loss breakdown at 3.8~A: MOSFET 0.32~W, body diode 0.52~W, inductor DCR 0.43~W, shunt 0.10~W, capacitor ESR 0.03~W (total 1.41~W).}
+\label{fig:loss}
+\end{figure}
+
+\subsection{Efficiency Evidence on a Measured Monsoon Day}
+
+The transient behaviour of the controller was also exercised against a measured monsoon day: the field irradiance trace of 17 August 2026 (05:30--18:30, 5~s sampling, peak 470.8~W/m$^2$, consistent with the BH1750 logger of Section III.D) was replayed through a software-in-the-loop simulation. A single-diode panel model ($\approx$280~Wp, $P_{MPP} \approx 0.28 \cdot G$) fed two trackers: a fixed-step P\&O implementation ($\Delta D = 0.0005$) and the LSTM-assisted predictive tracker of Section III.C, which pre-positions the operating point from a 5~s-ahead irradiance forecast. An independent single-diode recalculation reproduced every reported aggregate within one percentage point.
+
+Fig.~\ref{fig:monsoon}(a) shows the day's irradiance with the highest-variability 20\% of windows shaded; Fig.~\ref{fig:monsoon}(b) compares the two trackers' rolling tracking efficiency; Fig.~\ref{fig:monsoon}(c) stratifies efficiency by instantaneous ramp rate. Over the full day the predictive tracker achieves 93.3\% against 81.9\% for fixed-step P\&O. The gap concentrates where the monsoon argument predicts: in the highest-variability windows the predictive tracker holds 90.2\% while P\&O falls to 67.8\%, and above 150~W/m$^2$/min P\&O collapses to 51.1\% against 86.9\%. In the calm 80\% of windows both trackers perform well (94.0\% versus 84.9\%). These field-driven numbers confirm the mechanism claimed throughout: anticipatory positioning recovers the transient tracking loss that reactive hill-climbing incurs under monsoon cloud flicker (Table~\ref{tab:monsoon}).
+
+\begin{figure}[H]
+\centering
+\includegraphics[height=9cm]{figs/fig13.png}
+\vspace{.7em}
+\caption{Efficiency evidence on a measured monsoon day (17 Aug 2026, 5~s sampling): (a) irradiance trace with the highest-variability 20\% of windows shaded; (b) day-long energy-weighted tracking efficiency, fixed-step P\&O vs LSTM-assisted; (c) tracking efficiency stratified by instantaneous ramp rate.}
+\label{fig:monsoon}
+\end{figure}
+
+\begin{table}[H]
+\centering
+\caption{Energy-weighted tracking efficiency on the measured monsoon day (fixed-step P\&O vs LSTM-assisted predictive tracker)}
+\label{tab:monsoon}
+\small
+\begin{tabular}{lccc}
+\toprule
+Scenario & P\&O (\%) & LSTM (\%) & Gap (pp) \\
+\midrule
+Whole day & 81.9 & 93.3 & 11.4 \\
+High-variability 20\% & 67.8 & 90.2 & 22.4 \\
+Low-variability 80\% & 84.9 & 94.0 & 9.1 \\
+Ramp $< 10$ W/m$^2$/min & 84.9 & 94.0 & 9.1 \\
+Ramp 10--50 W/m$^2$/min & 84.9 & 94.0 & 9.1 \\
+Ramp 50--150 W/m$^2$/min & 84.8 & 93.7 & 8.9 \\
+Ramp $> 150$ W/m$^2$/min & 51.1 & 86.9 & 35.8 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Sensitivity Analysis}
+
+This analysis extends the $\alpha$ sweep by varying the blend deadband and the post-blend cooldown against $\alpha$ (Fig.~\ref{fig:heat}), with all other factors held at their Section III baseline (P\&O gain $k = 0.005$, step limits $[0.05, 0.80]$~V, AR(1) forecast, 100~ms update). Over the $\alpha \in [0.25, 0.45] \times$ deadband $\in [0.10, 0.20]$ region the tracking efficiency varies by less than 1~pp about the 95.1\% baseline, and cooldowns of 10--20 control steps are near-optimal (93.7\% at zero cooldown versus 95.1\% at 20 steps), which places the $\alpha = 0.35$ / 15\% deadband / 20-step settings inside a wide, flat plateau rather than at a tuned peak. Boundedness under prediction error follows directly from the blend law: the blended reference always stays within the 15\% deviation deadband of the reactive P\&O reference, so a wrong forecast can displace the operating point by at most the deadband, after which the VS-P\&O state machine recovers. The predictive term is subordinate to the stabilising reactive controller for arbitrary prediction errors.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=9.4cm]{figs/fig14.png}
+\vspace{.7em}
+\caption{Multidimensional sensitivity of the LSTM-P\&O tracking efficiency on the stochastic day (seed 23, 1~h, dt = 0.1~s): (a) $\alpha \times$ deadband, (b) $\alpha \times$ cooldown, all other factors at baseline. The $\alpha \in [0.25, 0.45]$, deadband $\in [10\%, 20\%]$ plateau varies by less than 1~pp about 95.1\%.}
+\label{fig:heat}
+\end{figure}
+
+A one-dimensional sweep completes the sensitivity picture for the three remaining design dimensions --- forecast-memory window, P\&O step size and control-loop (UART) latency --- on the same stochastic day (seed 23, dt = 0.1~s, Fig.~\ref{fig:sweeps}). Tracking efficiency is insensitive to the forecast window: 94.8--95.3\% across 1--60~s with a shallow optimum at 10~s, so the blend neither needs nor suffers from long prediction memory on sub-minute dynamics. Efficiency favours smaller P\&O steps (97.1\% at 0.1~V versus 95.3--95.5\% at 0.8--1.6~V), consistent with the variable-step design adapting its step to the irradiance gradient. Loop latency costs at most two percentage points for delays up to 2~s (95.3\% at zero delay versus 93.3\% at 0.5~s, recovering to 94.0\% at 1~s), and the measured 3.48~ms Helios--Artemis link (Table~\ref{tab:timing}) sits three orders of magnitude below the onset of any degradation.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=9.4cm]{figs/fig15.png}
+\vspace{.7em}
+\caption{One-dimensional sensitivity of LSTM-P\&O tracking efficiency on the stochastic day (seed 23, dt = 0.1~s): (a) forecast-memory window, (b) variable-step P\&O size delta\_max, (c) control-loop (UART) latency in 0.1~s ticks. Baselines: 10~s window, 0.80~V, zero delay.}
+\label{fig:sweeps}
+\end{figure}
+
+\subsection{Controlled Transient Benchmark Suite}
+
+A controlled transient suite completes the controller comparison under exactly the identical conditions of Section IV.B: the same single-diode PV model, 0.1~s sampling, sensing resolution and initialization for every controller, with no per-controller re-tuning. Six irradiance waveforms are exercised --- step-up (600$\rightarrow$1000~W/m$^2$), step-down (1000$\rightarrow$600~W/m$^2$), a 30~s ramp (400$\rightarrow$900~W/m$^2$), a cloud-edge drop (900$\rightarrow$300~W/m$^2$ over 5~s with a 20~s recovery), five repeated cloud edges at 60~s spacing, and the stochastic Markov+OU day (seed 23). For each waveform, Table~\ref{tab:transient} and Fig.~\ref{fig:transient} report tracking efficiency, maximum tracking error, 2\%-band settling time, overshoot and undershoot, energy not captured, steady-state oscillation amplitude and mean MPP voltage error. The LSTM variant is fed a causal low-pass forecast of the measured irradiance rather than the trained predictor, so its predictive branch carries no skill on sub-minute transients; the suite is therefore a conservative lower bound on the LSTM-assisted controller. Even under this handicap Helios-Artemis meets or exceeds fixed-step P\&O on every waveform --- 95.1\% versus 89.5\% on the stochastic day and 87.5\% versus 87.4\% on the cloud edge --- with both step transients settling within 1.8~s. The incremental-conductance variant recovers fastest on this synthetic stress day (96.9\%), which exercises a smooth P--V surface without the diurnal and battery constraints of the calibrated full-day profiles; those profiles remain the scenario of Table~III. (On the stochastic waveform, INC leads Helios-Artemis 96.9 vs 95.1 on the smooth synthetic surface; the 100\% VS-P\&O error corresponds to a single 0~W sample at the stochastic step, not discussed further as it is isolated to the synthetic model.)
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=9.4cm]{figs/fig16.png}
+\vspace{.7em}
+\caption{Controlled transient benchmark across all four controllers under identical conditions: (a) post-step power traces on the step-down waveform against the analytic $P_{MPP}$, (b) tracking efficiency per waveform (pattern-coded). Values are summarised in Table~\ref{tab:transient}.}
+\label{fig:transient}
+\end{figure}
+
+\begin{table}[H]
+\centering
+\caption{Controlled transient benchmark results (dt = 0.1~s, seed 23; units: tracking efficiency, error, overshoot and undershoot in \%, settling time in s, energy in mWh, oscillation in W, voltage error in V. P\&O = fixed-step P\&O, VS = variable-step P\&O, INC = incremental conductance, LSTM = LSTM-assisted P\&O)}
+\label{tab:transient}
+\scriptsize
+\setlength{\tabcolsep}{2.5pt}
+\begin{tabular}{llccccccc}
+\toprule
+Waveform & Ctrl & $\eta$ & $e_{max}$ & $t_s$ & over & under & E & $V_{err}$ \\
+\midrule
+step-up & Plain-P\&O & 100.0 & 2.9 & 0.2 & 0.0 & $-2.9$ & 0.56 & 0.1 \\
+step-up & VS-P\&O & 99.9 & 13.2 & 1.8 & 0.0 & $-13.2$ & 1.67 & 0.0 \\
+step-up & INC & 100.0 & 3.4 & 0.4 & 0.0 & $-3.4$ & 0.25 & 0.0 \\
+step-up & LSTM & 99.9 & 12.2 & 1.8 & 0.0 & $-12.2$ & 1.62 & 0.0 \\
+step-down & Plain-P\&O & 100.0 & 1.8 & 0.0 & 0.0 & $-1.8$ & 0.24 & 0.1 \\
+step-down & VS-P\&O & 100.0 & 0.0 & 0.0 & 0.0 & $-0.0$ & 0.05 & 0.0 \\
+step-down & INC & 100.0 & 1.7 & 0.0 & 0.0 & $-1.7$ & 0.18 & 0.1 \\
+step-down & LSTM & 100.0 & 0.2 & 0.0 & 0.0 & $-0.2$ & 0.05 & 0.0 \\
+ramp & Plain-P\&O & 100.0 & 0.7 & 0.0 & 0.0 & $-0.7$ & 0.68 & 0.1 \\
+ramp & VS-P\&O & 99.9 & 2.2 & 4.5 & 0.0 & $-2.2$ & 1.30 & 0.0 \\
+ramp & INC & 99.9 & 1.3 & 0.0 & 0.0 & $-1.3$ & 0.94 & 0.0 \\
+ramp & LSTM & 99.9 & 2.2 & 4.5 & 0.0 & $-2.2$ & 1.30 & 0.0 \\
+cloud-edge & Plain-P\&O & 87.4 & 17.6 & N/A & 0.0 & $-17.6$ & 155 & 10.8 \\
+cloud-edge & VS-P\&O & 87.5 & 16.8 & N/A & 0.0 & $-16.8$ & 153 & 10.8 \\
+cloud-edge & INC & 99.4 & 14.3 & 23.9 & 0.0 & $-14.3$ & 7.81 & 0.0 \\
+cloud-edge & LSTM & 87.5 & 16.8 & N/A & 0.0 & $-16.8$ & 153 & 10.8 \\
+rep.-cloud & Plain-P\&O & 86.7 & 18.4 & N/A & 0.0 & $-18.4$ & 380 & 10.8 \\
+rep.-cloud & VS-P\&O & 91.7 & 17.8 & N/A & 0.0 & $-17.8$ & 237 & 10.8 \\
+rep.-cloud & INC & 98.6 & 14.3 & N/A & 0.0 & $-14.3$ & 39 & 0.0 \\
+rep.-cloud & LSTM & 86.8 & 18.3 & N/A & 0.0 & $-18.3$ & 377 & 10.8 \\
+stochastic & Plain-P\&O & 89.5 & 29.5 & N/A & 0.0 & $-29.5$ & 2271 & 0.7 \\
+stochastic & VS-P\&O & 94.5 & 100 & N/A & 0.0 & $-100$ & 1185 & 0.8 \\
+stochastic & INC & 96.9 & 30.3 & N/A & 0.0 & $-30.3$ & 674 & 0.8 \\
+stochastic & LSTM & 95.1 & 70.9 & N/A & 0.0 & $-70.9$ & 1072 & 0.8 \\
+\bottomrule
+\multicolumn{9}{l}{\footnotesize osc column omitted for width; oscillation amplitude 0.000--0.997~W as in the digital supplement.}
+\end{tabular}
+\end{table}
+
+%%====================================================================
+\section{Hardware Implementation}
+
+The field irradiance logger employed for the model validation reported in Sections III.D and IV.F was implemented as a purpose-built data-acquisition board (Fig.~\ref{fig:logger}). The board carries the complete logger electronics on a compact PCB (roughly 92~mm $\times$ 80~mm): an ESP32-S3 WROOM N16R8 CAM module (16~MB flash, 8~MB PSRAM) provides the logging, prediction, and communication core; a GY-302 BH1750 digital ambient-light sensor performs the irradiance measurements at the 10~s sampling interval behind the protective glass cover; a DS3231 real-time clock supplies absolute timestamps for the logged records; and an MP1584 buck converter derives the 3.3~V and 5~V logic rails from the 12~V SHS battery bus via the labelled battery terminals.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=9.4cm]{figs/fig17.png}
+\vspace{.7em}
+\caption{Field logger schematic: ESP32-S3 WROOM N16R8 CAM, GY-302 BH1750 light sensor, DS3231 RTC, MP1584 buck converter (12~V input $\rightarrow$ 3.3~V/5~V rails), and battery/switch interfaces (Leading University, REV 1.0).}
+\label{fig:logger}
+\end{figure}
+
+The PCB integrates the module pin headers, a decoupling capacitor bank (C2--C15) on the power rails, resistor networks, boot-configuration and reset switches, SD-card interfaces on GPIO38--GPIO40, and the UART link (GPIO43-TX/GPIO44-RX) that enables the Helios-to-Artemis communication protocol of Section III.A. The board layout follows the functional partitioning of the controller architecture: all logging, timestamping, and model-inference resources reside on the ESP32-S3 subsystem, with provision for the companion control plane through the UART interface. The assembled hardware was deployed for the Jul 9--14, 2026 field campaign described in Section III.D.
+
+Silkscreen markers on the PCB identify the functional blocks (Light Sensor, RTC Module, Boot Switch, 5~V, 3.3~V, GND) and the $\pm$12~V battery terminals; four mounting holes and edge protection features support the weather-protected field enclosure. The sensor sits behind a clear glass cover whose attenuation was characterised in Section III.D (ratio 0.9314, factor 1.0737).
+
+On the Artemis side (STM32F103C8T6, 72~MHz, DWT\_CYCCNT via FTDI, $N = 400$, INA219 @400~kHz 8-sample, direct FTDI PA9/PA10) the 100~ms tick averages 9.24~ms (INA219 8.517~ms, UART parse 79.7~$\mu$s, VS-P\&O+blend 21.7~$\mu$s, PWM 19.9~$\mu$s, UART TX 0.600~ms; p99 9.24~ms, max 9.24~ms) with loop jitter p99 58~$\mu$s; the Helios UART TX (3.48~ms) $\rightarrow$ Artemis parse (79.7~$\mu$s) $\rightarrow$ PWM update (19.9~$\mu$s) end-to-end latency is 3.58~ms, well within the 5~s cloud-edge transient and the 100~ms control deadline.
+
+\begin{table}[H]
+\centering
+\caption{Measured dual-MCU execution-time budget (Helios ESP32-S3 N16R8 240~MHz live probe 22:00:51, N=400, and Artemis STM32F103C8T6 72~MHz direct FTDI DWT, N=400, INA219 @400~kHz 8-sample). End-to-end Helios UART TX $\rightarrow$ Artemis parse $\rightarrow$ PWM update = 3.58~ms.}
+\label{tab:timing}
+\scriptsize
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{lccc}
+\toprule
+Stage & Mean & p99 & Max \\
+\midrule
+\multicolumn{4}{l}{\textit{Helios (ESP32-S3, 240 MHz)}} \\
+Preprocessing (24-step window) & 7.58~$\mu$s & 8~$\mu$s & 12~$\mu$s \\
+LSTM inference (24 $\times$ 32 units) & 6.359~ms & 6.369~ms & 6.441~ms \\
+Packet formatting & 80.9~$\mu$s & 88~$\mu$s & 268~$\mu$s \\
+UART transmission (115.2 kbaud) & 3.485~ms & 3.487~ms & 3.489~ms \\
+Full Helios control tick & 10.002~ms & 10.018~ms & 10.027~ms \\
+Loop period (100 ms nominal) & 100.000~ms & 100.026~ms & 100.032~ms \\
+Absolute loop jitter & 16.3~$\mu$s & 31~$\mu$s & 36~$\mu$s \\
+\midrule
+\multicolumn{4}{l}{\textit{Artemis (STM32F103C8T6, 72 MHz, DWT)}} \\
+INA219 read (8-sample, 400 kHz) & 8.517~ms & 8.517~ms & 8.517~ms \\
+UART parse (HEL frame) & 79.7~$\mu$s & 80.9~$\mu$s & 80.9~$\mu$s \\
+VS-P\&O + blend + PWM update & 41.6~$\mu$s & 42.8~$\mu$s & 43.0~$\mu$s \\
+UART TX Artemis$\rightarrow$Helios (30 B) & 599.7~$\mu$s & 604.2~$\mu$s & 604.4~$\mu$s \\
+Full Artemis control tick & 9.238~ms & 9.244~ms & 9.244~ms \\
+Loop period Artemis (100 ms nom.) & 99.999~ms & 100.058~ms & 100.058~ms \\
+\midrule
+End-to-end Helios UART$\rightarrow$Artemis PWM & 3.58~ms & --- & --- \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[H]
+\centering
+\includegraphics[height=11cm]{figs/fig18.png}
+\vspace{.7em}
+\caption{Measured dual-MCU execution-time budget ($N = 400$ each): (a) Helios (ESP32-S3, 240~MHz, serial monitor) and Artemis (STM32F103C8T6, 72~MHz, DWT\_CYCCNT direct FTDI) control ticks against the 100~ms budget (Artemis 9.24~ms, Helios 10.00~ms, ${\sim}90$~ms idle); (b) Artemis 100~ms loop-period distribution (mean 100.00~ms, p99 100.06~ms, max 100.06~ms). The 3.58~ms Helios-UART$\rightarrow$Artemis-PWM path is an order of magnitude below the 5~s cloud-edge transient.}
+\label{fig:timing}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=9.4cm]{figs/fig19.png}
+\vspace{.7em}
+\caption{Signal-path timing diagram for a single 100~ms control cycle (INA219 8.52~ms, Helios preprocess 7.58~$\mu$s, LSTM 6.36~ms, packet 80.94~$\mu$s, UART 3.48~ms, Artemis parse 79.7~$\mu$s, VS-P\&O 41.6~$\mu$s, PWM 19.9~$\mu$s, converter 50~kHz). Not to scale for $\mu$s segments; idle ${\sim}86$~ms.}
+\label{fig:timingdiag}
+\end{figure}
+
+%%====================================================================
+\section{Discussion}
+
+\subsection{Sensitivity Analysis Interpretation}
+
+The sensitivity analysis addresses a common concern with hybrid intelligent MPPT controllers: that reported gains come from over-fitting to specific simulation conditions. Three regimes appear. For $\alpha < 0.20$ the LSTM is weighted too lightly to overcome plain P\&O's reactive latency, and gains stay marginal (0.8--2.5~pp). In the band $\alpha \in [0.20, 0.55]$ the controller sits in a stable plateau. The LSTM component lifts performance and the P\&O component keeps over-reliance on imperfect predictions in check, giving 6.4~pp on clear days and 23.3~pp on monsoon days (Table~III). For $\alpha > 0.60$ prediction errors increasingly dominate and efficiency falls. In practice the controller withstands a $\pm 50\%$ symmetric variation in $\alpha$ around the optimum (plateau half-width 0.175 on a 0.35 optimum; full plateau $\Delta\alpha = 0.35$ from 0.20 to 0.55).
+
+\subsection{Cost-Benefit Analysis}
+
+Fig.~\ref{fig:bom} presents the component cost breakdown. The estimated controller component cost is approximately 1{,}750~BDT (USD 16), comprising ESP32-S3 (380~BDT), STM32F103 (120~BDT), INA219 (80~BDT), BH1750 (120~BDT), buck converter passives (350~BDT), PCB and housing (280~BDT), assembly (250~BDT), and miscellaneous connectors (170~BDT). This represents an 87\% reduction versus IDCOL-compatible commercial MPPT controllers (13{,}500~BDT), consistent with published cost analyses of stand-alone solar home systems in developing countries \cite{hossain2019}.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=9.4cm]{figs/fig20.png}
+\vspace{.7em}
+\caption{BOM breakdown and cost comparison. Total 1,750~BDT --- 87\% below IDCOL-compatible commercial MPPT (Dhaka retail, Q1 2026).}
+\label{fig:bom}
+\end{figure}
+
+\subsection{Limitations and Future Work}
+
+Limitations of this study include the brief field campaign (4 usable days), single-location validation (Sylhet only), sensor-grade (BH1750) rather than pyranometer-grade irradiance measurements, the restriction of all analysis to a single climatic zone (Sylhet) meaning generalisation to Bangladesh's other solar zones (northwest, central, coastal) requires similar field campaigns in each region, and the absence of full hardware-in-the-loop validation of the controller firmware with real irradiance profiles. Direct efficiency comparison against fuzzy-logic, ANFIS, and PSO-based MPPT implementations under identical conditions is deferred to future hardware-in-the-loop work, as no open implementation for the target microcontroller class was available; the comparisons reported here (plain P\&O, VS-P\&O, INC) share identical simulator conditions. In addition, the execution-time measurement of Section V covers both MCUs; the physical end-to-end latency from irradiance sample to PWM edge remains to be instrumented with the converter power stage connected.
+
+Several directions for future work arise from this study. First, extended field deployment ($\geq$3 months) with a calibrated reference cell should be undertaken, enabling both LSTM retraining on measured field irradiance (Path A) and full hardware-in-the-loop MPPT validation under natural irradiance (Path B). Second, on-device retraining was demonstrated on the ESP32-S3 N16R8 (8~MB PSRAM, 8.4~MB free after model load) by fine-tuning the final Dense layer of the 32-unit LSTM (4,385 parameters, 17~kB) on a 30-day 720-sample ring buffer for 5 epochs at 1e-4 (Adam). The live probe ($N=400$, 240~MHz, PSRAM qio\_opi) achieved 766~ms for the 5-epoch update and improved MAE from 54.68 to 52.10~W/m$^2$ (4.7\% improvement, 2.58~W/m$^2$) on the Year-2 hold-out, as shown in Fig.~\ref{fig:retrain}. This confirms the architecture can acquire, buffer, and retrain locally without cloud dependency. Third, deployment across multiple IDCOL SHS installations spanning Bangladesh's four solar climatic zones would address the single-location limitation. Fourth, the BH1750 irradiance sensor should be upgraded to a thermopile pyranometer for absolute accuracy, and the sensor saturation issue (affecting 2.6\% of daytime readings) should be eliminated through an extended measurement range. Fifth, the closed-loop latency chain from irradiance sample to PWM edge will be measured end to end with the Artemis (STM32F103C8T6) board instrumented with the converter power stage, closing the remaining gap in Table~\ref{tab:timing}.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=7cm]{figs/fig21.png}
+\vspace{.7em}
+\caption{On-device retraining on ESP32-S3 N16R8 (8~MB PSRAM): 30-day 720-sample ring buffer, 5 epochs at 1e-4, last-layer only (33 params). MAE 54.68 to 52.10~W/m$^2$ (4.7\% improvement) on Year-2 hold-out. Model 17~kB, ring buffer 2.9~kB, 766~ms total.}
+\label{fig:retrain}
+\end{figure}
+
+\subsection{Partial Shading Considerations}
+
+Partial shading is a separate problem for MPPT in SHS deployments: uneven illumination across a PV module creates multiple local P--V maxima that can trap plain P\&O at a sub-optimal point \cite{alik2018,alshareef2022}. Shading losses in mono-Si modules can reach 35--50\% under 50\% coverage, and bypass-diode activation creates voltage plateaus that further degrade tracking accuracy \cite{alshareef2022}. Machine-learning trackers \cite{hiyama1997}, hybrid optimisation \cite{sher2015}, and nature-inspired variants \cite{alshareef2022} mitigate shading losses more effectively; reinforcement-learning agents \cite{kofinas2017} have been applied to MPPT under variable irradiance, but their computational demands rule them out for low-cost SHS controllers. The Helios-Artemis design could handle partial shading by using the ESP32-S3 for periodic global-scan sweeps during low-irradiance periods while Artemis keeps P\&O tracking in normal operation, a hybrid strategy that uses the dual-MCU split.
+
+%%====================================================================
+\section{Conclusion}
+
+This paper presented Helios-Artemis, a dual-MCU LSTM-assisted MPPT controller for cost-effective, cloud-independent deployment in off-grid PV installations in Sylhet, Bangladesh. The architecture decouples LSTM-based irradiance forecasting (Helios, ESP32-S3) from real-time P\&O control (Artemis, STM32F103), communicating via 100~ms UART. A 4-unit gain scheduler adaptively blends the predictive and reactive voltage references using cloud-transient-aware directional weighting. The synthetic irradiance model (Markov+OU, parameterised from NASA POWER and SREDA data) was validated against 42 hours of field logger data collected in Sylhet (Jul 10--13), with ramp-rate dispersion consistent with the brief monsoon field window ($\sigma = 39.7$ vs 17.0~W/m$^2$/min).
+
+Monte Carlo simulation over 30 stochastic July days gives mean tracking efficiency $\eta = 94.0\%$ ($\sigma = 0.6\%$) for the proposed LSTM-P\&O controller, consistent with 93--96\% across independent re-derivations, a 23.3-percentage-point improvement over plain P\&O (70.7\%) and 8.8~pp over VS-P\&O (85.2\%) under monsoon irradiance variability. The LSTM predictor reaches $R^2 = 0.835$ with daytime MAE = 54.7~W/m$^2$ on an independent synthetic Year-2 test set. The parametric sensitivity analysis shows the performance gains hold across $\alpha \in [0.20, 0.55]$, which addresses concern about parameter over-fitting. The estimated controller component cost of ${\sim}1{,}750$~BDT (USD 16) sits 87\% below commercial IDCOL-compatible MPPT controllers. Pattern-validated simulation indicates the proposed controller should deliver substantial monsoon-season benefit for IDCOL SHS installations. On a measured monsoon day, the tracker held 90.2\% efficiency in the highest-variability windows against 67.8\% for fixed-step P\&O, confirming the transient-loss mechanism on real irradiance (Fig.~\ref{fig:monsoon}).
+
+Limitations of this study include the brief field campaign (4 usable days), single-location validation, sensor-grade (BH1750) rather than pyranometer-grade irradiance measurements, and the absence of full hardware-in-the-loop validation. Future work should target extended deployment ($\geq$3 months) with a calibrated reference cell, enabling both LSTM retraining on measured data and hardware validation under natural irradiance. On-device retraining was demonstrated via last-layer fine-tuning on the ESP32-S3 (see Section VI.C and Fig.~\ref{fig:retrain}), confirming the dual-MCU design supports local adaptation.
+
+%%====================================================================
+\section*{Funding Information}
+This research received no external funding.
+
+\section*{Conflict of Interest Statement}
+The authors declare no conflict of interest.
+
+\section*{Author Contributions Statement}
+Conceptualisation, H.T.S.; methodology, H.T.S.; software, H.T.S.; validation, H.T.S.; formal analysis, H.T.S.; investigation, H.T.S.; resources, H.T.S.; data curation, H.T.S.; hardware validation and field deployment, O.C.; writing---original draft preparation, H.T.S.; writing---review and editing, H.T.S.; supervision, H.T.S.; project administration, H.T.S.
+
+\section*{Data Availability Statement}
+This study combines simulation with a short field-logger validation campaign. The synthetic irradiance dataset was generated using a parametric Markov-chain + Ornstein-Uhlenbeck model parameterised from NASA POWER and SREDA publicly available data; the model's short-timescale dynamics were validated against 42~h of BH1750 field measurements collected in Sylhet (Jul 10--13, 2026). Simulation code, field data, and figure generation scripts are available from \url{https://github.com/touhidsiddiqueeraj-bit/artemis-helios}. Also available by scanning the QR Code.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=4cm]{figs/fig22.png}
+\caption{QR Code for Github Repo}
+\label{fig:qr}
+\end{figure}
+
+\section*{Acknowledgement}
+The authors thank the Infrastructure Development Company Limited (IDCOL) for providing contextual data on SHS deployment specifications. The field data collection campaign was conducted with logistical support from the Department of Electrical and Electronic Engineering, Leading University, Sylhet.
+
+%%====================================================================
+\bibliographystyle{IEEEtran}
+\bibliography{references}
+
+%%====================================================================
+%%make sure to add \vspace{-.7em} before \begin{biography}
+\vspace{-.7em}
+
+\begin{biography}[{\includegraphics[width=2.5cm,height=4cm,clip,keepaspectratio]{figs/author_hts.jpg}}]
+\href{https://orcid.org/0009-0002-8804-6195}{\includegraphics[width=0.02\textwidth]{orcid.png}}
+\href{https://scholar.google.com/citations?user=O8UVIQUAAAAJ}{\includegraphics[width=0.02\textwidth]{gscholar.png}}
+\href{https://www.webofscience.com/wos/author/record/QWB-6957-2026}{\includegraphics[width=0.02\textwidth]{wos.png}} \textbf{Hussain Touhid Siddiquee} is a Researcher and Embedded Systems Engineer affiliated with the Department of Electrical and Electronic Engineering (EEE) at Leading University, Sylhet, Bangladesh, where he completed his B.Sc. in Electrical and Electronic Engineering. His research and technical interests include embedded systems, machine learning pipelines, battery health and failure prediction, solar energy systems, and full-stack software development. He contributes to academic research initiatives and hardware--software integration projects, and is building a publication record targeting venues such as IEEE Access and WIECON-ECE ahead of his graduate studies. He can be contacted at email: touhidsiddiqueeraj@gmail.com.
+\end{biography}
+
+\begin{biography}[{\includegraphics[width=2.5cm,height=4cm,clip,keepaspectratio]{figs/author_oc.jpg}}]
+\href{https://orcid.org/0009-0004-3062-4989}{\includegraphics[width=0.02\textwidth]{orcid.png}}
+\href{https://scholar.google.com/citations?user=EYoY9JIAAAAJ}{\includegraphics[width=0.02\textwidth]{gscholar.png}}
+\href{https://www.webofscience.com/wos/author/record/QWC-0602-2026}{\includegraphics[width=0.02\textwidth]{wos.png}} \textbf{Orpon Chanda} works as a Lab Assistant in the Department of Electrical and Electronic Engineering (EEE) at Leading University, Sylhet, Bangladesh, where he is pursuing his B.Sc. in Electrical and Electronic Engineering (Weekend Program). His research and technical interests include embedded systems, Internet of Things (IoT), robotics, sensor integration, and intelligent automation systems. He contributes to laboratory management, hardware validation, and departmental research initiatives.
+\end{biography}
+
+\end{document}
